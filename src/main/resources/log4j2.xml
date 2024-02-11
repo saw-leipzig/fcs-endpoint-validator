@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
     <Properties>
-        <Property name="logdir">${sys:catalina.base}/logs</Property>
+        <Property name="logdir">$${sys:catalina.base}/logs</Property>
         <Property name="layout">%d %p %C{1.} [%t] %m%n</Property>
     </Properties>
     <Appenders>
@@ -27,6 +27,9 @@
     </Appenders>
 
     <Loggers>
+        <!-- set log level to ALL to get logs from SRU/FCS libraries -->
+        <Logger name="eu.clarin.sru" level="all" additivity="true"></Logger>
+        <!-- set log level for tester -->
         <Logger name="eu.clarin.sru.fcs.tester" level="debug" additivity="false">
             <AppenderRef ref="Console" />
         </Logger>

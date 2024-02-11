@@ -1,9 +1,11 @@
 package eu.clarin.sru.fcs.tester;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.platform.engine.TestExecutionResult;
@@ -14,25 +16,16 @@ import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LogCapturingTestExecutionListener implements TestExecutionListener {
-    protected static final Logger logger = LoggerFactory.getLogger(LogCapturingTestExecutionListener.class);
+public class FCSTestExecutionListener implements TestExecutionListener {
+    protected static final Logger logger = LoggerFactory.getLogger(FCSTestExecutionListener.class);
 
-    protected static String LOGCAPTURING_APPENDER_NAME = "LOGCAPTURE_SRUFCS";
+    protected static String LOGCAPTURING_APPENDER_NAME = LogCapturingAppender.class.getName();
+
     protected LogCapturingAppender appender;
-    protected Map<String, Long> testThreadIds = new HashMap<>();
 
-    protected Map<String, List<LogEvent>> logs = new HashMap<>();
+    protected Map<String, FCSTestResult> results = new HashMap<>();
 
-    public Map<String, List<LogEvent>> getLogs() {
-        return logs;
-    }
-
-    private void gatherLogs(TestIdentifier testIdentifier) {
-        String name = testIdentifier.getUniqueId();
-        Long id = Thread.currentThread().getId();
-        logger.debug("Get logs for {} in thread {}", name, id);
-        logs.put(name, appender.logs.remove(id));
-    }
+    // ----------------------------------------------------------------------
 
     @Override
     public void executionStarted(TestIdentifier testIdentifier) {
@@ -44,7 +37,11 @@ public class LogCapturingTestExecutionListener implements TestExecutionListener 
     @Override
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
         if (testIdentifier.getType() == Type.TEST) {
-            gatherLogs(testIdentifier);
+            List<LogEvent> testLogs = gatherLogs(testIdentifier);
+            String name = testIdentifier.getUniqueId();
+            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), testLogs,
+                    testExecutionResult, null);
+            results.put(name, result);
             logger.info("test finished: {} {}", testIdentifier.getUniqueId(), testExecutionResult);
         }
     }
@@ -52,7 +49,10 @@ public class LogCapturingTestExecutionListener implements TestExecutionListener 
     @Override
     public void executionSkipped(TestIdentifier testIdentifier, String reason) {
         if (testIdentifier.getType() == Type.TEST) {
-            gatherLogs(testIdentifier);
+            List<LogEvent> testLogs = gatherLogs(testIdentifier);
+            String name = testIdentifier.getUniqueId();
+            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), testLogs, null, reason);
+            results.put(name, result);
             logger.info("test skipped: {} {}", testIdentifier.getUniqueId(), reason);
         }
     }
@@ -63,6 +63,7 @@ public class LogCapturingTestExecutionListener implements TestExecutionListener 
         org.apache.logging.log4j.core.Logger sruLogger = ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager
                 .getLogger("eu.clarin.sru"));
         sruLogger.setAdditive(true);
+        // sruLogger.setLevel(Level.ALL);
 
         appender = new LogCapturingAppender(LOGCAPTURING_APPENDER_NAME, null,
                 PatternLayout.createDefaultLayout(), true, null);
@@ -82,4 +83,17 @@ public class LogCapturingTestExecutionListener implements TestExecutionListener 
         }
     }
 
+    // ----------------------------------------------------------------------
+
+    public Map<String, FCSTestResult> getResults() {
+        return results;
+    }
+
+    private List<LogEvent> gatherLogs(TestIdentifier testIdentifier) {
+        String name = testIdentifier.getUniqueId();
+        Long id = Thread.currentThread().getId();
+        logger.debug("Get logs for {} in thread {}", name, id);
+        List<LogEvent> testLogs = appender.getLogsAndClear(id);
+        return Collections.unmodifiableList((testLogs != null) ? testLogs : Collections.emptyList());
+    }
 }

@@ -4,9 +4,25 @@ import static org.junit.platform.engine.discovery.ClassNameFilter.includeClassNa
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Map;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.utils.HttpClientUtils;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.impl.NoConnectionReuseStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.logging.log4j.core.pattern.NameAbbreviator;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.LauncherSession;
@@ -18,12 +34,51 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.clarin.sru.client.SRUClientException;
+import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector;
+import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector.AutodetectedFCSVersion;
+
 public class FCSEndpointTester {
     protected static final Logger logger = LoggerFactory.getLogger(FCSEndpointTester.class);
+    protected static final NameAbbreviator logNameConverter = NameAbbreviator.getAbbreviator("1.");
 
-    public static void main(String[] args) {
-        logger.info("Hello World!");
+    public static void main(String[] args) throws SRUClientException, IOException {
+        logger.info("Start FCS Endpoint Tester!");
 
+        // required user supplied parameters
+        final String baseURI = "https://fcs.data.saw-leipzig.de/lcc";
+        FCSTestProfile profile = null;
+
+        // initial check if endpoint is available
+        performProbeRequest(baseURI, FCSTestContext.DEFAULT_USER_AGENT, FCSTestContext.DEFAULT_CONNECT_TIMEOUT,
+                FCSTestContext.DEFAULT_SOCKET_TIMEOUT);
+        logger.debug("Endpoint at '{}' can be reached.", baseURI);
+
+        // if not supplied, detect profile
+        if (profile == null) {
+            logger.info("No endpoint version supplied, trying to detect ...");
+            profile = detectFCSEndpointVersion(baseURI);
+        }
+
+        // configure test context
+        FCSTestContextFactory contextFactory = FCSTestContextFactory.getInstance();
+        contextFactory.setBaseURI(baseURI);
+        contextFactory.setFCSTestProfile(profile);
+
+        FCSEndpointTester tester = new FCSEndpointTester();
+        Map<String, FCSTestResult> results = tester.runTests();
+
+        results.entrySet().forEach(e -> {
+            logger.info("Logs for {}:", e.getKey());
+            e.getValue().getLogs().forEach(l -> logger.info("  - [{}][{}] {}", l.getLevel(),
+                    formatClassName(l.getLoggerName()), l.getMessage()));
+        });
+
+        logger.info("done");
+    }
+
+    protected Map<String, FCSTestResult> runTests() {
+        // what tests to run
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
                 .filters(includeClassNamePatterns(".*Test"))
@@ -31,8 +86,10 @@ public class FCSEndpointTester {
 
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
 
-        LogCapturingTestExecutionListener testExecListener = new LogCapturingTestExecutionListener();
+        // to capture test logs, results etc.
+        FCSTestExecutionListener testExecListener = new FCSTestExecutionListener();
 
+        // run tests
         try (LauncherSession session = LauncherFactory.openSession()) {
             Launcher launcher = session.getLauncher();
             // Register a listener of your choice
@@ -53,12 +110,99 @@ public class FCSEndpointTester {
                 .filter(l -> !l.isBlank())
                 .forEach(l -> logger.info("{}", l.stripLeading()));
 
-        logger.info("logs: {}", testExecListener.getLogs());
-        testExecListener.getLogs().entrySet().forEach(e -> {
-            logger.info("Logs for {}:", e.getKey());
-            e.getValue().forEach(l -> logger.info("  - {}", l.getMessage()));
-        });
+        return testExecListener.getResults();
+    }
 
-        logger.info("done");
+    private static CloseableHttpClient createHttpClient(String userAgent, int connectTimeout, int socketTimeout) {
+        final PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager();
+        manager.setDefaultMaxPerRoute(8);
+        manager.setMaxTotal(128);
+
+        final SocketConfig socketConfig = SocketConfig.custom()
+                .setSoReuseAddress(true)
+                .setSoLinger(0)
+                .build();
+
+        final RequestConfig requestConfig = RequestConfig.custom()
+                .setAuthenticationEnabled(false)
+                .setRedirectsEnabled(true)
+                .setMaxRedirects(4)
+                .setCircularRedirectsAllowed(false)
+                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+                .setConnectTimeout(connectTimeout)
+                .setSocketTimeout(socketTimeout)
+                .setConnectionRequestTimeout(0) /* infinite */
+                .build();
+
+        return HttpClients.custom()
+                .setUserAgent(userAgent)
+                .setConnectionManager(manager)
+                .setDefaultSocketConfig(socketConfig)
+                .setDefaultRequestConfig(requestConfig)
+                .setConnectionReuseStrategy(new NoConnectionReuseStrategy())
+                .build();
+    }
+
+    private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
+        final ClarinFCSEndpointVersionAutodetector versionAutodetector = new ClarinFCSEndpointVersionAutodetector();
+
+        AutodetectedFCSVersion version = null;
+        try {
+            version = versionAutodetector.autodetectVersion(endpointURI);
+        } catch (SRUClientException e) {
+            logger.error("Error trying to detect endpoint version", e);
+            throw new SRUClientException("An error occured while auto-detecting CLARIN-FCS version", e);
+        }
+
+        logger.debug("Auto-detected endpoint version = {}", version);
+
+        FCSTestProfile profile = null;
+        switch (version) {
+            case FCS_LEGACY:
+                profile = FCSTestProfile.CLARIN_FCS_LEGACY;
+                break;
+            case FCS_1_0:
+                profile = FCSTestProfile.CLARIN_FCS_1_0;
+                break;
+            case FCS_2_0:
+                profile = FCSTestProfile.CLARIN_FCS_2_0;
+                break;
+            case UNKNOWN:
+                /* $FALL-THROUGH$ */
+            default:
+                throw new SRUClientException("Unable to auto-detect CLARIN-FCS version!");
+        }
+
+        return profile;
+    }
+
+    private static void performProbeRequest(final String baseURI, String userAgent, int connectTimeout,
+            int socketTimeout)
+            throws IOException {
+        try {
+            logger.debug("performing initial probe request to {}", baseURI);
+            final CloseableHttpClient client = createHttpClient(userAgent, connectTimeout, socketTimeout);
+            final HttpHead request = new HttpHead(baseURI);
+            HttpResponse response = null;
+            try {
+                response = client.execute(request);
+                StatusLine status = response.getStatusLine();
+                if (status.getStatusCode() != HttpStatus.SC_OK) {
+                    throw new IOException(
+                            "Probe request to endpoint returned unexpected HTTP status " + status.getStatusCode());
+                }
+            } finally {
+                HttpClientUtils.closeQuietly(response);
+                HttpClientUtils.closeQuietly(client);
+            }
+        } catch (ClientProtocolException e) {
+            throw new IOException(e);
+        }
+    }
+
+    protected static String formatClassName(String classname) {
+        StringBuilder buf = new StringBuilder();
+        logNameConverter.abbreviate(classname, buf);
+        return buf.toString();
     }
 }
