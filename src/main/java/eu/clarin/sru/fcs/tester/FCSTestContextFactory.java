@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.tester;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class FCSTestContextFactory {
@@ -67,6 +68,37 @@ public class FCSTestContextFactory {
 
     public void setSocketTimeout(int socketTimeout) {
         this.socketTimeout = socketTimeout;
+    }
+
+    // ----------------------------------------------------------------------
+
+    public void setProperty(String key, Object value) {
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
+        properties.put(key, value);
+    }
+
+    public Object getProperty(String key) {
+        if (properties != null) {
+            return properties.get(key);
+        } else {
+            return null;
+        }
+    }
+
+    public boolean hasProperty(String key) {
+        if (properties != null) {
+            return properties.containsKey(key);
+        } else {
+            return false;
+        }
+    }
+
+    public void removeProperty(String key) {
+        if (properties != null) {
+            properties.remove(key);
+        }
     }
 
     // ----------------------------------------------------------------------

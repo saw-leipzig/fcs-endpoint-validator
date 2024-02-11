@@ -13,15 +13,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.utils.HttpClientUtils;
-import org.apache.http.config.SocketConfig;
-import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.logging.log4j.core.pattern.NameAbbreviator;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -64,6 +58,13 @@ public class FCSEndpointTester {
         FCSTestContextFactory contextFactory = FCSTestContextFactory.getInstance();
         contextFactory.setBaseURI(baseURI);
         contextFactory.setFCSTestProfile(profile);
+
+        // capture request/response pairs
+        // TODO: need to add the connection to the FCSTestExecutionListener to add them
+        // to the results ...
+        SingleRequestResponseHttpInterceptor reqRespCapturer = new SingleRequestResponseHttpInterceptor();
+        contextFactory.setProperty(FCSTestContext.PROPERTY_REQUEST_INTERCEPTOR, reqRespCapturer);
+        contextFactory.setProperty(FCSTestContext.PROPERTY_RESPONSE_INTERCEPTOR, reqRespCapturer);
 
         FCSEndpointTester tester = new FCSEndpointTester();
         Map<String, FCSTestResult> results = tester.runTests();
@@ -113,36 +114,6 @@ public class FCSEndpointTester {
         return testExecListener.getResults();
     }
 
-    private static CloseableHttpClient createHttpClient(String userAgent, int connectTimeout, int socketTimeout) {
-        final PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager();
-        manager.setDefaultMaxPerRoute(8);
-        manager.setMaxTotal(128);
-
-        final SocketConfig socketConfig = SocketConfig.custom()
-                .setSoReuseAddress(true)
-                .setSoLinger(0)
-                .build();
-
-        final RequestConfig requestConfig = RequestConfig.custom()
-                .setAuthenticationEnabled(false)
-                .setRedirectsEnabled(true)
-                .setMaxRedirects(4)
-                .setCircularRedirectsAllowed(false)
-                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
-                .setConnectTimeout(connectTimeout)
-                .setSocketTimeout(socketTimeout)
-                .setConnectionRequestTimeout(0) /* infinite */
-                .build();
-
-        return HttpClients.custom()
-                .setUserAgent(userAgent)
-                .setConnectionManager(manager)
-                .setDefaultSocketConfig(socketConfig)
-                .setDefaultRequestConfig(requestConfig)
-                .setConnectionReuseStrategy(new NoConnectionReuseStrategy())
-                .build();
-    }
-
     private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
         final ClarinFCSEndpointVersionAutodetector versionAutodetector = new ClarinFCSEndpointVersionAutodetector();
 
@@ -181,7 +152,8 @@ public class FCSEndpointTester {
             throws IOException {
         try {
             logger.debug("performing initial probe request to {}", baseURI);
-            final CloseableHttpClient client = createHttpClient(userAgent, connectTimeout, socketTimeout);
+            final CloseableHttpClient client = FCSTestContext.createHttpClient(userAgent, connectTimeout,
+                    socketTimeout);
             final HttpHead request = new HttpHead(baseURI);
             HttpResponse response = null;
             try {

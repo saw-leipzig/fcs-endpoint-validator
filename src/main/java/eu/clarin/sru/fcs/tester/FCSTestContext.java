@@ -5,6 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.HttpResponseInterceptor;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.SocketConfig;
+import org.apache.http.impl.NoConnectionReuseStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
 import eu.clarin.sru.client.SRUClient;
 import eu.clarin.sru.client.SRUClientConfig;
 import eu.clarin.sru.client.SRUExplainRequest;
@@ -23,6 +34,8 @@ import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordDataParser;
 public class FCSTestContext {
 
     public static final String PROPERTY_USER_AGENT = FCSTestContext.class.getName() + ":USER_AGENT";
+    public static final String PROPERTY_REQUEST_INTERCEPTOR = FCSTestContext.class.getName() + ":REQUEST_INTERCEPTOR";
+    public static final String PROPERTY_RESPONSE_INTERCEPTOR = FCSTestContext.class.getName() + ":RESPONSE_INTERCEPTOR";
 
     public static final String DEFAULT_USER_AGENT = "FCSEndpointTester/1.0.0";
     public static final int DEFAULT_CONNECT_TIMEOUT = -1;
@@ -138,11 +151,73 @@ public class FCSTestContext {
             builder.addExtraResponseDataParser(new ClarinFCSEndpointDescriptionParser());
         }
 
+        HttpRequestInterceptor requestInterceptor = null;
+        if (hasProperty(PROPERTY_REQUEST_INTERCEPTOR)) {
+            Object value = getProperty(PROPERTY_REQUEST_INTERCEPTOR);
+            if (value instanceof HttpRequestInterceptor) {
+                requestInterceptor = (HttpRequestInterceptor) value;
+            }
+        }
+        HttpResponseInterceptor responseInterceptor = null;
+        if (hasProperty(PROPERTY_RESPONSE_INTERCEPTOR)) {
+            Object value = getProperty(PROPERTY_RESPONSE_INTERCEPTOR);
+            if (value instanceof HttpResponseInterceptor) {
+                responseInterceptor = (HttpResponseInterceptor) value;
+            }
+        }
+        final CloseableHttpClient httpClient = createHttpClient(DEFAULT_USER_AGENT, connectTimeout, socketTimeout,
+                requestInterceptor, responseInterceptor);
+        builder.setCustomizedHttpClient(httpClient);
+
         return builder.build();
     }
 
     public SRUClient getClient() {
         return new SRUClient(buildSRUClientConfig());
+    }
+
+    public static CloseableHttpClient createHttpClient(String userAgent, int connectTimeout, int socketTimeout) {
+        return createHttpClient(userAgent, connectTimeout, socketTimeout, null, null);
+    }
+
+    public static CloseableHttpClient createHttpClient(String userAgent, int connectTimeout, int socketTimeout,
+            HttpRequestInterceptor requestInterceptor, HttpResponseInterceptor responseInterceptor) {
+        final PoolingHttpClientConnectionManager manager = new PoolingHttpClientConnectionManager();
+        manager.setDefaultMaxPerRoute(8);
+        manager.setMaxTotal(128);
+
+        final SocketConfig socketConfig = SocketConfig.custom()
+                .setSoReuseAddress(true)
+                .setSoLinger(0)
+                .build();
+
+        final RequestConfig requestConfig = RequestConfig.custom()
+                .setAuthenticationEnabled(false)
+                .setRedirectsEnabled(true)
+                .setMaxRedirects(4)
+                .setCircularRedirectsAllowed(false)
+                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+                .setConnectTimeout(connectTimeout)
+                .setSocketTimeout(socketTimeout)
+                .setConnectionRequestTimeout(0) /* infinite */
+                .build();
+
+        HttpClientBuilder clientBuilder = HttpClients.custom()
+                .setUserAgent(userAgent)
+                .setConnectionManager(manager)
+                .setDefaultSocketConfig(socketConfig)
+                .setDefaultRequestConfig(requestConfig)
+                .setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+
+        // add optional interceptors to capture requests / responses
+        if (requestInterceptor != null) {
+            clientBuilder.addInterceptorLast(requestInterceptor);
+        }
+        if (responseInterceptor != null) {
+            clientBuilder.addInterceptorLast(responseInterceptor);
+        }
+
+        return clientBuilder.build();
     }
 
     // ----------------------------------------------------------------------

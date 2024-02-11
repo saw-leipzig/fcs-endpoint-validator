@@ -1,9 +1,11 @@
 package eu.clarin.sru.fcs.tester.tests;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Disabled
 public final class DemoTest {
     protected static final Logger logger = LoggerFactory.getLogger(DemoTest.class);
 
