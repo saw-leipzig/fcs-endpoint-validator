@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.util.List;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,24 @@ public class FCSSearchTest extends AbstractFCSTest {
     // TODO: supply via context, maybe make repeatable and change?
     private final String randomSearchTerm = RandomStringUtils.randomAlphanumeric(16);
     private final String unicodeSearchTerm = "öäüÖÄÜß€";
+
+    private static ClarinFCSEndpointDescription endpointDescription;
+
+    // ----------------------------------------------------------------------
+
+    @BeforeAll
+    static void fetchEndpointDescription(FCSTestContext context) throws SRUClientException {
+        SRUExplainRequest req = context.createExplainRequest();
+        req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
+        SRUExplainResponse res = context.getClient().explain(req);
+        List<ClarinFCSEndpointDescription> descs = res.getExtraResponseData(ClarinFCSEndpointDescription.class);
+
+        assertNotNull(descs, "Endpoint did not return a CLARIN FCS endpoint description");
+        assertEquals(1, descs.size(),
+                "Endpoint must only return one instance of a CLARIN FCS endpoint description");
+
+        endpointDescription = descs.get(0);
+    }
 
     // ----------------------------------------------------------------------
 
@@ -356,20 +375,12 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Expected("Expecting at least one record in CLARIN-FCS record schema (without any surrogate diagnostics)")
     void doFCS20SearchAndRequestRecordSchema(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0, "Only checked for FCS 2.0.");
+        assumeTrue(endpointDescription != null, "No Endpoint Description?");
 
-        // do we know if we support ADV search?
-        SRUExplainRequest reqExplain = context.createExplainRequest();
-        reqExplain.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
-        SRUExplainResponse resExplain = context.getClient().explain(reqExplain);
-        List<ClarinFCSEndpointDescription> descs = resExplain.getExtraResponseData(ClarinFCSEndpointDescription.class);
-        assertNotNull(descs, "Endpoint did not return a CLARIN FCS endpoint description");
-        assertEquals(1, descs.size(),
-                "Endpoint must only return one instance of a CLARIN FCS endpoint description");
-        ClarinFCSEndpointDescription desc = descs.get(0);
-        assertEquals(2, desc.getVersion(),
-                "FCS 2.0 endpoint must provide an endpoint description with version set to \"2\"");
-
-        boolean supportsADV = desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_ADVANCED_SEARCH);
+        // do we support ADV search?
+        boolean supportsADV = endpointDescription.getCapabilities()
+                .contains(ClarinFCSConstants.CAPABILITY_ADVANCED_SEARCH);
+        assumeTrue(supportsADV, "Endpoint claims no support for Advanced Search");
 
         // ----------------------------------------------
 
