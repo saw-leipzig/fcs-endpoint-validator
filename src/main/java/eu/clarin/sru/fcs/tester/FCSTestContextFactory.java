@@ -16,6 +16,8 @@ public class FCSTestContextFactory {
     private boolean strictMode = true;
     private CloseableHttpClient httpClient;
 
+    private String userSearchTerm;
+
     // ----------------------------------------------------------------------
 
     private static FCSTestContextFactory newInstance() {
@@ -61,6 +63,16 @@ public class FCSTestContextFactory {
 
     public void setHttpClient(CloseableHttpClient httpClient) {
         this.httpClient = httpClient;
+    }
+
+    // ----------------------------------------------------------------------
+
+    public String getUserSearchTerm() {
+        return userSearchTerm;
+    }
+
+    public void setUserSearchTerm(String userSearchTerm) {
+        this.userSearchTerm = userSearchTerm;
     }
 
     // ----------------------------------------------------------------------
@@ -117,7 +129,7 @@ public class FCSTestContextFactory {
             testHttpClient = FCSTestHttpClientFactory.getInstance().newClient();
         }
 
-        final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, testHttpClient);
+        final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, testHttpClient, userSearchTerm);
         if (properties != null) {
             for (Map.Entry<String, Object> property : properties.entrySet()) {
                 context.setProperty(property.getKey(), property.getValue());

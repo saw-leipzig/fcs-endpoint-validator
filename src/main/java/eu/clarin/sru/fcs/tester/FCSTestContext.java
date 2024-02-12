@@ -31,9 +31,11 @@ public class FCSTestContext {
     private final boolean strictMode;
     private final CloseableHttpClient httpClient;
 
+    private final String userSearchTerm;
+
     // ----------------------------------------------------------------------
 
-    public FCSTestContext(FCSTestProfile profile, String baseURI, boolean strictMode, CloseableHttpClient httpClient) {
+    public FCSTestContext(FCSTestProfile profile, String baseURI, boolean strictMode, CloseableHttpClient httpClient, String userSearchTerm) {
         if (profile == null) {
             throw new NullPointerException("profile == null");
         }
@@ -45,6 +47,8 @@ public class FCSTestContext {
         this.baseURI = baseURI;
         this.strictMode = strictMode;
         this.httpClient = httpClient;
+
+        this.userSearchTerm = userSearchTerm;
     }
 
     public FCSTestProfile getFCSTestProfile() {
@@ -61,6 +65,13 @@ public class FCSTestContext {
 
     public CloseableHttpClient getHttpClient() {
         return httpClient;
+    }
+
+    // ----------------------------------------------------------------------
+
+
+    public String getUserSearchTerm() {
+        return userSearchTerm;
     }
 
     // ----------------------------------------------------------------------

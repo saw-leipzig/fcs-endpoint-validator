@@ -11,7 +11,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import eu.clarin.sru.client.SRUClientException;
@@ -23,8 +22,10 @@ import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.fcs.tester.FCSTestContext;
 import eu.clarin.sru.fcs.tester.FCSTestProfile;
+import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.Explain;
 
-@Tag("explain")
+@Order(1000)
+@Explain
 @DisplayName("Explain")
 public class FCSExplainTest extends AbstractFCSTest {
 
@@ -113,7 +114,8 @@ public class FCSExplainTest extends AbstractFCSTest {
 
         List<ClarinFCSEndpointDescription> descs = res.getExtraResponseData(ClarinFCSEndpointDescription.class);
         assertNotNull(descs, "Endpoint did not return a CLARIN FCS endpoint description");
-        assertEquals(1, descs.size(), "Endpoint must only return one instance of a CLARIN FCS endpoint description");
+        assertEquals(1, descs.size(),
+                "Endpoint must only return one instance of a CLARIN FCS endpoint description");
 
         // validate FCS 1.0 Endpoint Description
         ClarinFCSEndpointDescription desc = descs.get(0);
@@ -132,7 +134,8 @@ public class FCSExplainTest extends AbstractFCSTest {
             }
         }
         assertTrue(found,
-                "Endpoint must declare support for Generic Hits dataview (mimeType = " + DataViewHits.TYPE + ")");
+                "Endpoint must declare support for Generic Hits dataview (mimeType = "
+                        + DataViewHits.TYPE + ")");
 
         assertNotEquals(0, desc.getResources().size(),
                 "No resources declared. Endpoint must declare at least one Resource");
@@ -151,7 +154,8 @@ public class FCSExplainTest extends AbstractFCSTest {
 
         List<ClarinFCSEndpointDescription> descs = res.getExtraResponseData(ClarinFCSEndpointDescription.class);
         assertNotNull(descs, "Endpoint did not return a CLARIN FCS endpoint description");
-        assertEquals(1, descs.size(), "Endpoint must only return one instance of a CLARIN FCS endpoint description");
+        assertEquals(1, descs.size(),
+                "Endpoint must only return one instance of a CLARIN FCS endpoint description");
 
         // validate FCS 2.0 Endpoint Description
         ClarinFCSEndpointDescription desc = descs.get(0);
@@ -174,7 +178,8 @@ public class FCSExplainTest extends AbstractFCSTest {
             }
         }
         assertTrue(foundHits,
-                "Endpoint must declare support for Generic Hits dataview (mimeType = " + DataViewHits.TYPE + ")");
+                "Endpoint must declare support for Generic Hits dataview (mimeType = "
+                        + DataViewHits.TYPE + ")");
         if (supportsADV) {
             assertTrue(foundAdv,
                     "Capabilites indicate support for Advanced Search, so Endpoint must declare support for Advanced dataview (mimeType = "

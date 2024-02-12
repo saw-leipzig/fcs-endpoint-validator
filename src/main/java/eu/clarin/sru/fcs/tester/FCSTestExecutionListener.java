@@ -1,7 +1,7 @@
 package eu.clarin.sru.fcs.tester;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +31,7 @@ public class FCSTestExecutionListener implements TestExecutionListener {
     protected LogCapturingAppender appender;
     protected HttpRequestResponseRecordingInterceptor httpRequestResponseRecordingInterceptor;
 
-    protected Map<String, FCSTestResult> results = new HashMap<>();
+    protected Map<String, FCSTestResult> results = new LinkedHashMap<>();
 
     public FCSTestExecutionListener(HttpRequestResponseRecordingInterceptor httpRequestResponseRecordingInterceptor) {
         this.httpRequestResponseRecordingInterceptor = httpRequestResponseRecordingInterceptor;

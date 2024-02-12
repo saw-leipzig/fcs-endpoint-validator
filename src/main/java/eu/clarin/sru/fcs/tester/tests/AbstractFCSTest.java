@@ -34,6 +34,18 @@ public abstract class AbstractFCSTest {
 
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
+    @Tag("explain")
+    public static @interface Explain {
+    }
+
+    @Target({ ElementType.TYPE, ElementType.METHOD })
+    @Retention(RetentionPolicy.RUNTIME)
+    @Tag("searchRetrieve")
+    public static @interface SearchRetrieve {
+    }
+
+    @Target({ ElementType.TYPE, ElementType.METHOD })
+    @Retention(RetentionPolicy.RUNTIME)
     @Tag("clarin-fcs-legacy")
     public static @interface ClarinFCSLegacy {
         public static final FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_LEGACY;

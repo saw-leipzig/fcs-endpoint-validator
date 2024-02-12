@@ -17,6 +17,7 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.logging.log4j.core.pattern.NameAbbreviator;
+import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.LauncherSession;
@@ -41,6 +42,7 @@ public class FCSEndpointTester {
 
         // required user supplied parameters
         final String baseURI = "https://fcs.data.saw-leipzig.de/lcc";
+        final String userSearchTerm = "test";
         FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_2_0;
 
         // initial check if endpoint is available
@@ -63,21 +65,29 @@ public class FCSEndpointTester {
         FCSTestContextFactory contextFactory = FCSTestContextFactory.getInstance();
         contextFactory.setBaseURI(baseURI);
         contextFactory.setFCSTestProfile(profile);
+        contextFactory.setUserSearchTerm(userSearchTerm);
         // we set client here to reuse it for all tests
         contextFactory.setHttpClient(httpClientFactory.newClient());
 
         // run tests
-        Map<String, FCSTestResult> results = runTests(reqRespCapturer);
+        Map<String, FCSTestResult> results = runTests(true, reqRespCapturer);
 
         // dumpLogs(results);
-        writeTestResults(results);
+        writeTestResults(results, false);
 
         logger.info("done");
     }
 
-    private static void writeTestResults(Map<String, FCSTestResult> results) {
+    private static void writeTestResults(Map<String, FCSTestResult> results, boolean hideAborted) {
+        logger.info("Endpoint test results:");
         results.entrySet().forEach(e -> {
             FCSTestResult result = e.getValue();
+
+            // silently skip
+            if (hideAborted && result.getTestExecutionResult().getStatus() == TestExecutionResult.Status.ABORTED) {
+                return;
+            }
+
             final String status;
             switch (result.getTestExecutionResult().getStatus()) {
                 case SUCCESSFUL:
@@ -97,12 +107,15 @@ public class FCSEndpointTester {
                     result.getHttpRequestResponseInfos().size());
             switch (result.getTestExecutionResult().getStatus()) {
                 case FAILED:
-                    logger.info("    * failed, reason: {}", result.getTestExecutionResult().getThrowable().toString());
+                    logger.info("      * failed, reason: {}",
+                            (result.getTestExecutionResult().getThrowable().isPresent())
+                                    ? result.getTestExecutionResult().getThrowable().get().getMessage()
+                                    : "~~ unknown ~~");
                     break;
                 case ABORTED:
-                    logger.info("    * skipped, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
+                    logger.info("      * skipped, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
                             : (result.getTestExecutionResult().getThrowable().isPresent())
-                                    ? result.getTestExecutionResult().getThrowable().get().toString()
+                                    ? result.getTestExecutionResult().getThrowable().get().getMessage()
                                     : "~~ unknown ~~");
                     break;
                 default:
@@ -130,15 +143,25 @@ public class FCSEndpointTester {
         return buf.toString();
     }
 
-    protected static Map<String, FCSTestResult> runTests(HttpRequestResponseRecordingInterceptor httpReqRespRecorder) {
+    protected static Map<String, FCSTestResult> runTests(boolean concurrent,
+            HttpRequestResponseRecordingInterceptor httpReqRespRecorder) {
         // what tests to run
-        LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        LauncherDiscoveryRequestBuilder requestBuilder = LauncherDiscoveryRequestBuilder.request()
                 .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
                 .filters(includeClassNamePatterns(".*Test"))
                 // enable order based on @Order annotation
+                // (might not be guaranteed if running concurrently)
                 .configurationParameter("junit.jupiter.testmethod.order.default",
                         "org.junit.jupiter.api.MethodOrderer$OrderAnnotation")
-                .build();
+                .configurationParameter("junit.jupiter.testclass.order.default ",
+                        "org.junit.jupiter.api.ClassOrderer$OrderAnnotation");
+        if (concurrent) {
+            logger.info("Will perform tests in parallel (by class)!");
+            requestBuilder.configurationParameter("junit.jupiter.execution.parallel.enabled", "true")
+                    .configurationParameter("junit.jupiter.execution.parallel.mode.default", "same_thread")
+                    .configurationParameter("junit.jupiter.execution.parallel.mode.classes.default", "concurrent");
+        }
+        LauncherDiscoveryRequest request = requestBuilder.build();
 
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
 
