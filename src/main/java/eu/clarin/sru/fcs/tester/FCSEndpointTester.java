@@ -44,26 +44,29 @@ public class FCSEndpointTester {
         FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_2_0;
 
         // initial check if endpoint is available
-        performProbeRequest(baseURI, FCSTestContext.DEFAULT_USER_AGENT, FCSTestContext.DEFAULT_CONNECT_TIMEOUT,
-                FCSTestContext.DEFAULT_SOCKET_TIMEOUT);
+        performProbeRequest(baseURI);
         logger.debug("Endpoint at '{}' can be reached.", baseURI);
 
-        // if not supplied, detect profile
+        // if not supplied, try to detect profile
         if (profile == null) {
             logger.info("No endpoint version supplied, trying to detect ...");
             profile = detectFCSEndpointVersion(baseURI);
         }
 
+        // capture request/response pairs
+        HttpRequestResponseRecordingInterceptor reqRespCapturer = new HttpRequestResponseRecordingInterceptor();
+        FCSTestHttpClientFactory httpClientFactory = FCSTestHttpClientFactory.getInstance();
+        httpClientFactory.setProperty(FCSTestHttpClientFactory.PROPERTY_REQUEST_INTERCEPTOR, reqRespCapturer);
+        httpClientFactory.setProperty(FCSTestHttpClientFactory.PROPERTY_RESPONSE_INTERCEPTOR, reqRespCapturer);
+
         // configure test context
         FCSTestContextFactory contextFactory = FCSTestContextFactory.getInstance();
         contextFactory.setBaseURI(baseURI);
         contextFactory.setFCSTestProfile(profile);
+        // we set client here to reuse it for all tests
+        contextFactory.setHttpClient(httpClientFactory.newClient());
 
-        // capture request/response pairs
-        HttpRequestResponseRecordingInterceptor reqRespCapturer = new HttpRequestResponseRecordingInterceptor();
-        contextFactory.setProperty(FCSTestContext.PROPERTY_REQUEST_INTERCEPTOR, reqRespCapturer);
-        contextFactory.setProperty(FCSTestContext.PROPERTY_RESPONSE_INTERCEPTOR, reqRespCapturer);
-
+        // run tests
         Map<String, FCSTestResult> results = runTests(reqRespCapturer);
 
         // dumpLogs(results);
@@ -199,13 +202,11 @@ public class FCSEndpointTester {
         return profile;
     }
 
-    private static void performProbeRequest(final String baseURI, String userAgent, int connectTimeout,
-            int socketTimeout)
+    private static void performProbeRequest(final String baseURI)
             throws IOException {
         try {
             logger.debug("performing initial probe request to {}", baseURI);
-            final CloseableHttpClient client = FCSTestContext.createHttpClient(userAgent, connectTimeout,
-                    socketTimeout);
+            final CloseableHttpClient client = FCSTestHttpClientFactory.getInstance().newClient();
             final HttpHead request = new HttpHead(baseURI);
             HttpResponse response = null;
             try {

@@ -3,6 +3,8 @@ package eu.clarin.sru.fcs.tester;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.http.impl.client.CloseableHttpClient;
+
 public class FCSTestContextFactory {
     // singleton
     private static FCSTestContextFactory instance;
@@ -12,8 +14,7 @@ public class FCSTestContextFactory {
     private FCSTestProfile profile;
     private String baseURI;
     private boolean strictMode = true;
-    private int connectTimeout = FCSTestContext.DEFAULT_CONNECT_TIMEOUT;
-    private int socketTimeout = FCSTestContext.DEFAULT_SOCKET_TIMEOUT;
+    private CloseableHttpClient httpClient;
 
     // ----------------------------------------------------------------------
 
@@ -54,20 +55,12 @@ public class FCSTestContextFactory {
         this.strictMode = strictMode;
     }
 
-    public int getConnectTimeout() {
-        return connectTimeout;
+    public CloseableHttpClient getHttpClient() {
+        return httpClient;
     }
 
-    public void setConnectTimeout(int connectTimeout) {
-        this.connectTimeout = connectTimeout;
-    }
-
-    public int getSocketTimeout() {
-        return socketTimeout;
-    }
-
-    public void setSocketTimeout(int socketTimeout) {
-        this.socketTimeout = socketTimeout;
+    public void setHttpClient(CloseableHttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     // ----------------------------------------------------------------------
@@ -80,10 +73,14 @@ public class FCSTestContextFactory {
     }
 
     public Object getProperty(String key) {
+        return getProperty(key, null);
+    }
+
+    public Object getProperty(String key, Object defaultValue) {
         if (properties != null) {
             return properties.get(key);
         } else {
-            return null;
+            return defaultValue;
         }
     }
 
@@ -111,7 +108,16 @@ public class FCSTestContextFactory {
             throw new NullPointerException("baseURI == null");
         }
 
-        FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, connectTimeout, socketTimeout);
+        final CloseableHttpClient testHttpClient;
+        if (httpClient != null) {
+            testHttpClient = httpClient;
+        } else {
+            // create default http client
+            // NOTE: we do not cache it here if not explicitly set by user
+            testHttpClient = FCSTestHttpClientFactory.getInstance().newClient();
+        }
+
+        final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, testHttpClient);
         if (properties != null) {
             for (Map.Entry<String, Object> property : properties.entrySet()) {
                 context.setProperty(property.getKey(), property.getValue());
