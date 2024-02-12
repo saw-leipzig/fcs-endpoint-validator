@@ -167,14 +167,19 @@ public class FCSTestExecutionListener implements TestExecutionListener {
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
         logger.debug("Remove log capturing appender");
-        // TODO: rewrite this, too?
-        org.apache.logging.log4j.core.Logger sruLogger = ((org.apache.logging.log4j.core.Logger) LogManager
-                .getLogger(LOGCAPTURING_LOGGER_NAME));
-        if (appender != null) {
-            appender.stop();
-            sruLogger.removeAppender(appender);
-            appender = null;
+
+        final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        final Configuration config = ctx.getConfiguration();
+
+        appender.stop();
+
+        for (final LoggerConfig loggerConfig : config.getLoggers().values()) {
+            loggerConfig.removeAppender(LOGCAPTURING_APPENDER_NAME);
         }
+
+        appender = null;
+
+        ctx.updateLoggers();
     }
 
     // ----------------------------------------------------------------------
