@@ -28,7 +28,7 @@
 
     <Loggers>
         <!-- set log level to ALL to get logs from SRU/FCS libraries -->
-        <Logger name="eu.clarin.sru" level="all" additivity="true"></Logger>
+        <!-- <Logger name="eu.clarin.sru" level="all" additivity="true"></Logger> -->
         <!-- set log level for tester -->
         <Logger name="eu.clarin.sru.fcs.tester" level="debug" additivity="false">
             <AppenderRef ref="Console" />
