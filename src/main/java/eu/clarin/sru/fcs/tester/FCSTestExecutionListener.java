@@ -48,10 +48,32 @@ public class FCSTestExecutionListener implements TestExecutionListener {
 
     // ----------------------------------------------------------------------
 
+    // TODO: incept BeforeAll to get its requests/responses
+    // org.junit.jupiter.api.extension.InvocationInterceptor#interceptBeforeAllMethod
+
     @Override
     public void executionStarted(TestIdentifier testIdentifier) {
         if (testIdentifier.getType() == Type.TEST) {
             logger.info("test started: {}", testIdentifier.getUniqueId());
+
+            // clear logs and requests/responses from before (e.g., from @BeforeAll methods)
+            String name = testIdentifier.getUniqueId();
+            Long id = Thread.currentThread().getId();
+
+            List<LogEvent> testLogs = appender.getLogsAndClear(id);
+            if (testLogs != null) {
+                logger.debug("Found {} log entries from before current test {}, silently dropping them.",
+                        testLogs.size(), name);
+            }
+
+            if (httpRequestResponseRecordingInterceptor != null) {
+                List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> testHttpRequestResponseInfos = httpRequestResponseRecordingInterceptor
+                        .getHttpRequestResponseInfosAndClear(id);
+                if (testHttpRequestResponseInfos != null) {
+                    logger.debug("Found {} request/response infos from before current test {}, silently dropping them.",
+                            testHttpRequestResponseInfos.size(), name);
+                }
+            }
         }
     }
 
