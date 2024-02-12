@@ -26,6 +26,7 @@ public class FCSTestExecutionListener implements TestExecutionListener {
 
     protected static final String LOGCAPTURING_APPENDER_NAME = LogCapturingAppender.class.getName();
     protected static final String LOGCAPTURING_LOGGER_NAME = "eu.clarin.sru";
+    protected static final String LOGCAPTURING_LOGGER_IGNORE = "eu.clarin.sru.fcs.tester";
 
     protected LogCapturingAppender appender;
     protected HttpRequestResponseRecordingInterceptor httpRequestResponseRecordingInterceptor;
@@ -81,10 +82,18 @@ public class FCSTestExecutionListener implements TestExecutionListener {
     public void testPlanExecutionStarted(TestPlan testPlan) {
         logger.debug("Add log capturing appender");
 
-        // see
         // https://logging.apache.org/log4j/2.x/manual/customconfig.html#programmatically-modifying-the-current-configuration-after-initi
         final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         final Configuration config = ctx.getConfiguration();
+
+        boolean hasLoggerAlreadyConfigured = false;
+        for (final LoggerConfig loggerConfig : config.getLoggers().values()) {
+            if (loggerConfig.getName().equals(LOGCAPTURING_LOGGER_NAME)) {
+                // check if we have the logger (we want to capture) already defined
+                hasLoggerAlreadyConfigured = true;
+            }
+        }
+
         final PatternLayout layout = PatternLayout.createDefaultLayout(config);
 
         appender = new LogCapturingAppender(LOGCAPTURING_APPENDER_NAME, null, layout, true, null);
@@ -92,23 +101,68 @@ public class FCSTestExecutionListener implements TestExecutionListener {
 
         config.addAppender(appender);
 
-        // add custom appender to get logs
-        AppenderRef ref = AppenderRef.createAppenderRef(LOGCAPTURING_APPENDER_NAME, null, null);
-        AppenderRef[] refs = new AppenderRef[] { ref };
-        @SuppressWarnings("deprecation")
-        LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.ALL, LOGCAPTURING_LOGGER_NAME, "true", refs,
-                null, config, null);
-        loggerConfig.addAppender(appender, null, null);
-        config.addLogger(LOGCAPTURING_LOGGER_NAME, loggerConfig);
+        if (!hasLoggerAlreadyConfigured) {
+            // add new logger to set our appender to get the logs
+            AppenderRef ref = AppenderRef.createAppenderRef(LOGCAPTURING_APPENDER_NAME, null, null);
+            AppenderRef[] refs = new AppenderRef[] { ref };
+            @SuppressWarnings("deprecation")
+            LoggerConfig loggerConfig = LoggerConfig.createLogger(false, Level.ALL, LOGCAPTURING_LOGGER_NAME, "true",
+                    refs, null, config, null);
+            loggerConfig.addAppender(appender, null, null);
+            config.addLogger(LOGCAPTURING_LOGGER_NAME, loggerConfig);
 
-        ctx.updateLoggers();
+            ctx.updateLoggers();
+
+            // check for child loggers
+            for (final LoggerConfig childLoggerConfig : config.getLoggers().values()) {
+                if (childLoggerConfig.getName().equals(LOGCAPTURING_LOGGER_IGNORE)
+                        || childLoggerConfig.getName().startsWith(LOGCAPTURING_LOGGER_IGNORE + ".")) {
+                    continue;
+                }
+                // TODO: this does not yet work as we want -- no console output
+                // do we need to add the parents (and skip over?)
+                if (childLoggerConfig.getName().startsWith(LOGCAPTURING_LOGGER_NAME + ".")) {
+                    // we need to increase the level, otherwise nothing can't be captured on certain
+                    // levels -- this also means that any other defined logger will have its level
+                    // increase too (--> much more output in console/logfile)
+                    childLoggerConfig.setLevel(Level.ALL);
+                    // childLoggerConfig.setAdditive(true);
+                    System.out.println(childLoggerConfig.getName() + " .... child");
+                }
+            }
+        } else {
+            // check if we have the logger (we want to capture) already defined
+            for (final LoggerConfig loggerConfig : config.getLoggers().values()) {
+                if (loggerConfig.getName().equals(LOGCAPTURING_LOGGER_IGNORE)
+                        || loggerConfig.getName().startsWith(LOGCAPTURING_LOGGER_IGNORE + ".")) {
+                    continue;
+                }
+                if (loggerConfig.getName().equals(LOGCAPTURING_LOGGER_NAME)) {
+                    // we need to increase the level, otherwise nothing can't be captured on certain
+                    // levels this also means that any other defined logger will have its level
+                    // increase too (--> much more output in console/logfile)
+                    loggerConfig.setLevel(Level.ALL);
+                    // loggerConfig.setAdditive(true);
+                    loggerConfig.addAppender(appender, Level.ALL, null);
+
+                    // System.out.println("\nFound logger with same name ..." +
+                    // loggerConfig.getName() + "\n");
+                    // final Level level = loggerConfig.getLevel();
+                    // for (final Map.Entry<String,Appender> oldAppender :
+                    // loggerConfig.getParent().getAppenders().entrySet()) {
+                    // loggerConfig.addAppender(oldAppender.getValue(), level, null);
+                    // }
+                }
+            }
+        }
     }
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
         logger.debug("Remove log capturing appender");
-        org.apache.logging.log4j.core.Logger sruLogger = ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager
-                .getLogger("eu.clarin.sru"));
+        // TODO: rewrite this, too?
+        org.apache.logging.log4j.core.Logger sruLogger = ((org.apache.logging.log4j.core.Logger) LogManager
+                .getLogger(LOGCAPTURING_LOGGER_NAME));
         if (appender != null) {
             appender.stop();
             sruLogger.removeAppender(appender);

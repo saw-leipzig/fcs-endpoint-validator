@@ -28,9 +28,13 @@
 
     <Loggers>
         <!-- set log level to ALL to get logs from SRU/FCS libraries -->
-        <!-- <Logger name="eu.clarin.sru" level="all" additivity="true"></Logger> -->
+        <!-- NOTE: if any loggers 'eu.clarin.sru' are defined in another way, always add additivity="true"!!! -->
+        <!-- NOTE: the log level does not matter, for log capturing it will be increase to ALL to get everything -->
+        <!-- <Logger name="eu.clarin.sru" level="info" additivity="true"></Logger> -->
+        <!-- <Logger name="eu.clarin.sru.client" level="info" additivity="true"></Logger> -->
+
         <!-- set log level for tester -->
-        <Logger name="eu.clarin.sru.fcs.tester" level="debug" additivity="false">
+        <Logger name="eu.clarin.sru.fcs.tester" level="info" additivity="false">
             <AppenderRef ref="Console" />
         </Logger>
         <!-- LOG everything at INFO level -->
