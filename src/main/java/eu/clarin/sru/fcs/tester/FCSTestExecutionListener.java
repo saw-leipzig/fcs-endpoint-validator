@@ -5,11 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.TestDescriptor.Type;
+import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
@@ -22,8 +21,17 @@ public class FCSTestExecutionListener implements TestExecutionListener {
     protected static String LOGCAPTURING_APPENDER_NAME = LogCapturingAppender.class.getName();
 
     protected LogCapturingAppender appender;
+    protected HttpRequestResponseRecordingInterceptor httpRequestResponseRecordingInterceptor;
 
     protected Map<String, FCSTestResult> results = new HashMap<>();
+
+    public FCSTestExecutionListener(HttpRequestResponseRecordingInterceptor httpRequestResponseRecordingInterceptor) {
+        this.httpRequestResponseRecordingInterceptor = httpRequestResponseRecordingInterceptor;
+    }
+
+    public FCSTestExecutionListener() {
+        this(null);
+    }
 
     // ----------------------------------------------------------------------
 
@@ -38,9 +46,11 @@ public class FCSTestExecutionListener implements TestExecutionListener {
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
         if (testIdentifier.getType() == Type.TEST) {
             List<LogEvent> testLogs = gatherLogs(testIdentifier);
+            List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponseInfos = gatherHttpRequestResponseInfos(
+                    testIdentifier);
             String name = testIdentifier.getUniqueId();
             FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), testLogs,
-                    testExecutionResult, null);
+                    httpRequestResponseInfos, testExecutionResult);
             results.put(name, result);
             logger.info("test finished: {} {}", testIdentifier.getUniqueId(), testExecutionResult);
         }
@@ -50,8 +60,11 @@ public class FCSTestExecutionListener implements TestExecutionListener {
     public void executionSkipped(TestIdentifier testIdentifier, String reason) {
         if (testIdentifier.getType() == Type.TEST) {
             List<LogEvent> testLogs = gatherLogs(testIdentifier);
+            List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponseInfos = gatherHttpRequestResponseInfos(
+                    testIdentifier);
             String name = testIdentifier.getUniqueId();
-            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), testLogs, null, reason);
+            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), testLogs,
+                    httpRequestResponseInfos, reason);
             results.put(name, result);
             logger.info("test skipped: {} {}", testIdentifier.getUniqueId(), reason);
         }
@@ -95,5 +108,20 @@ public class FCSTestExecutionListener implements TestExecutionListener {
         logger.debug("Get logs for {} in thread {}", name, id);
         List<LogEvent> testLogs = appender.getLogsAndClear(id);
         return Collections.unmodifiableList((testLogs != null) ? testLogs : Collections.emptyList());
+    }
+
+    private List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> gatherHttpRequestResponseInfos(
+            TestIdentifier testIdentifier) {
+        if (httpRequestResponseRecordingInterceptor == null) {
+            return Collections.unmodifiableList(Collections.emptyList());
+        }
+
+        String name = testIdentifier.getUniqueId();
+        Long id = Thread.currentThread().getId();
+        logger.debug("Get http request/response info for {} in thread {}", name, id);
+        List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> testHttpRequestResponseInfos = httpRequestResponseRecordingInterceptor
+                .getHttpRequestResponseInfosAndClear(id);
+        return Collections.unmodifiableList(
+                (testHttpRequestResponseInfos != null) ? testHttpRequestResponseInfos : Collections.emptyList());
     }
 }

@@ -41,7 +41,7 @@ public class FCSEndpointTester {
 
         // required user supplied parameters
         final String baseURI = "https://fcs.data.saw-leipzig.de/lcc";
-        FCSTestProfile profile = null;
+        FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_2_0;
 
         // initial check if endpoint is available
         performProbeRequest(baseURI, FCSTestContext.DEFAULT_USER_AGENT, FCSTestContext.DEFAULT_CONNECT_TIMEOUT,
@@ -60,35 +60,87 @@ public class FCSEndpointTester {
         contextFactory.setFCSTestProfile(profile);
 
         // capture request/response pairs
-        // TODO: need to add the connection to the FCSTestExecutionListener to add them
-        // to the results ...
-        SingleRequestResponseHttpInterceptor reqRespCapturer = new SingleRequestResponseHttpInterceptor();
+        HttpRequestResponseRecordingInterceptor reqRespCapturer = new HttpRequestResponseRecordingInterceptor();
         contextFactory.setProperty(FCSTestContext.PROPERTY_REQUEST_INTERCEPTOR, reqRespCapturer);
         contextFactory.setProperty(FCSTestContext.PROPERTY_RESPONSE_INTERCEPTOR, reqRespCapturer);
 
-        FCSEndpointTester tester = new FCSEndpointTester();
-        Map<String, FCSTestResult> results = tester.runTests();
+        Map<String, FCSTestResult> results = runTests(reqRespCapturer);
 
-        results.entrySet().forEach(e -> {
-            logger.info("Logs for {}:", e.getKey());
-            e.getValue().getLogs().forEach(l -> logger.info("  - [{}][{}] {}", l.getLevel(),
-                    formatClassName(l.getLoggerName()), l.getMessage()));
-        });
+        // dumpLogs(results);
+        writeTestResults(results);
 
         logger.info("done");
     }
 
-    protected Map<String, FCSTestResult> runTests() {
+    private static void writeTestResults(Map<String, FCSTestResult> results) {
+        results.entrySet().forEach(e -> {
+            FCSTestResult result = e.getValue();
+            final String status;
+            switch (result.getTestExecutionResult().getStatus()) {
+                case SUCCESSFUL:
+                    status = "✔";
+                    break;
+                case FAILED:
+                    status = "✘";
+                    break;
+                case ABORTED:
+                    status = "!";
+                    break;
+                default:
+                    status = "?"; // ✨ // this should never happen
+                    break;
+            }
+            logger.info(" {} >> {} << ({} logs, {} https)", status, result.getName(), result.getLogs().size(),
+                    result.getHttpRequestResponseInfos().size());
+            switch (result.getTestExecutionResult().getStatus()) {
+                case FAILED:
+                    logger.info("    * failed, reason: {}", result.getTestExecutionResult().getThrowable().toString());
+                    break;
+                case ABORTED:
+                    logger.info("    * skipped, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
+                            : (result.getTestExecutionResult().getThrowable().isPresent())
+                                    ? result.getTestExecutionResult().getThrowable().get().toString()
+                                    : "~~ unknown ~~");
+                    break;
+                default:
+                    break;
+            }
+
+        });
+    }
+
+    private static void dumpLogs(Map<String, FCSTestResult> results) {
+        results.entrySet().forEach(e -> {
+            if (e.getValue().getLogs().isEmpty()) {
+                logger.info("No logs for {}.", e.getKey());
+            } else {
+                logger.info("Logs for {}:", e.getKey());
+                e.getValue().getLogs().forEach(l -> logger.info("  - [{}][{}] {}", l.getLevel(),
+                        formatClassName(l.getLoggerName()), l.getMessage()));
+            }
+        });
+    }
+
+    protected static String formatClassName(String classname) {
+        StringBuilder buf = new StringBuilder();
+        logNameConverter.abbreviate(classname, buf);
+        return buf.toString();
+    }
+
+    protected static Map<String, FCSTestResult> runTests(HttpRequestResponseRecordingInterceptor httpReqRespRecorder) {
         // what tests to run
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
                 .filters(includeClassNamePatterns(".*Test"))
+                // enable order based on @Order annotation
+                .configurationParameter("junit.jupiter.testmethod.order.default",
+                        "org.junit.jupiter.api.MethodOrderer$OrderAnnotation")
                 .build();
 
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
 
         // to capture test logs, results etc.
-        FCSTestExecutionListener testExecListener = new FCSTestExecutionListener();
+        FCSTestExecutionListener testExecListener = new FCSTestExecutionListener(httpReqRespRecorder);
 
         // run tests
         try (LauncherSession session = LauncherFactory.openSession()) {
@@ -172,9 +224,4 @@ public class FCSEndpointTester {
         }
     }
 
-    protected static String formatClassName(String classname) {
-        StringBuilder buf = new StringBuilder();
-        logNameConverter.abbreviate(classname, buf);
-        return buf.toString();
-    }
 }
