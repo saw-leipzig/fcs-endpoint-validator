@@ -70,7 +70,7 @@ public class FCSEndpointTester {
         contextFactory.setHttpClient(httpClientFactory.newClient());
 
         // run tests
-        Map<String, FCSTestResult> results = runTests(true, reqRespCapturer);
+        Map<String, FCSTestResult> results = runTests(false, reqRespCapturer);
 
         // dumpLogs(results);
         writeTestResults(results, false);
@@ -113,6 +113,7 @@ public class FCSEndpointTester {
                                     : "~~ unknown ~~");
                     break;
                 case ABORTED:
+                    // NOTE: might also be a warning?
                     logger.info("      * skipped, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
                             : (result.getTestExecutionResult().getThrowable().isPresent())
                                     ? result.getTestExecutionResult().getThrowable().get().getMessage()

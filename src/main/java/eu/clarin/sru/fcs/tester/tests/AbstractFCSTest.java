@@ -40,6 +40,12 @@ public abstract class AbstractFCSTest {
 
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
+    @Tag("scan")
+    public static @interface Scan {
+    }
+
+    @Target({ ElementType.TYPE, ElementType.METHOD })
+    @Retention(RetentionPolicy.RUNTIME)
     @Tag("searchRetrieve")
     public static @interface SearchRetrieve {
     }
