@@ -1,7 +1,6 @@
 package eu.clarin.sru.fcs.tester.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -25,6 +24,7 @@ public class FCSScanTest extends AbstractFCSTest {
     @Order(2000)
     @ClarinFCSLegacy
     @DisplayName("Scan with missing 'scanClause' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/7\"")
     void doScanWithMissingScanClause(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY, "Only checked for Legacy FCS.");
 
@@ -38,6 +38,7 @@ public class FCSScanTest extends AbstractFCSTest {
     @Order(2010)
     @ClarinFCSLegacy
     @DisplayName("Scan on 'fcs.resource = root'")
+    @Expected("One or more terms returned within scan response")
     void doScanOnRoot(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY, "Only checked for Legacy FCS.");
 
@@ -56,6 +57,7 @@ public class FCSScanTest extends AbstractFCSTest {
     @Order(2030)
     @ClarinFCSLegacy
     @DisplayName("Scan on 'fcs.resource = root' with 'maximumTerms' with value 1")
+    @Expected("Exactly one term returned within scan response")
     void doScanOnRootWithMaximumTermsIsOne(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY, "Only checked for Legacy FCS.");
 
@@ -73,6 +75,7 @@ public class FCSScanTest extends AbstractFCSTest {
     @Order(2040)
     @ClarinFCSAny
     @DisplayName("Scan on 'fcs.resource = root' with bad 'maximumTerms' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
     void doScanOnRootWithInvalidMaximumTermsArg(FCSTestContext context) throws SRUClientException {
         SRUScanRequest req = context.createScanRequest();
         req.setScanClause("fcs.resource=root");
@@ -85,6 +88,7 @@ public class FCSScanTest extends AbstractFCSTest {
     @Order(2050)
     @ClarinFCSAny
     @DisplayName("Scan on 'fcs.resource = root' with bad 'responsePosition' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
     void doScanOnRootWithInvalidResponsePositionArg(FCSTestContext context) throws SRUClientException {
         SRUScanRequest req = context.createScanRequest();
         req.setScanClause("fcs.resource=root");

@@ -86,6 +86,12 @@ public abstract class AbstractFCSTest {
     public static @interface ClarinFCSAnyOld {
     }
 
+    @Target({ ElementType.METHOD })
+    @Retention(RetentionPolicy.RUNTIME)
+    public static @interface Expected {
+        String value();
+    }
+
     // ----------------------------------------------------------------------
 
     protected boolean hasDiagnostic(SRUExplainResponse res, String uri) {

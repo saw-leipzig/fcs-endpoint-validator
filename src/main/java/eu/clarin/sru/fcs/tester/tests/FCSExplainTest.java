@@ -33,6 +33,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Order(1000)
     @ClarinFCSAny
     @DisplayName("Regular explain request using default version")
+    @Expected("No errors or diagnostics")
     void doDefaultExplain(FCSTestContext context) throws SRUClientException {
         SRUExplainRequest req = context.createExplainRequest();
         SRUExplainResponse res = context.getClient().explain(req);
@@ -43,6 +44,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Order(1010)
     @ClarinFCSAnyOld
     @DisplayName("Explain without 'operation' and 'version' arguments")
+    @Expected("An plain explain response with SRU version choosen by server")
     void doExplainWithoutArgs(FCSTestContext context) throws SRUClientException {
         assumeTrue(
                 context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_1_0
@@ -59,6 +61,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Order(1020)
     @ClarinFCSAnyOld
     @DisplayName("Explain without 'version' argument")
+    @Expected("An plain explain response with SRU version choosen by server")
     void doExplainWithoutVersionArg(FCSTestContext context) throws SRUClientException {
         assumeTrue(
                 context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_1_0
@@ -74,6 +77,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Order(1040)
     @ClarinFCSAnyOld
     @DisplayName("Explain without 'operation' argument")
+    @Expected("An plain explain response with SRU version argument")
     void doExplainWithoutOperationArg(FCSTestContext context) throws SRUClientException {
         assumeTrue(
                 context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_1_0
@@ -89,6 +93,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Order(1050)
     @ClarinFCSAnyOld
     @DisplayName("Explain with invalid value for 'version' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/5\"")
     void doExplainWithInvalidVersionArg(FCSTestContext context) throws SRUClientException {
         assumeTrue(
                 context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_1_0
@@ -105,6 +110,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Order(1100)
     @ClarinFCS10
     @DisplayName("Check for a valid FCS endpoint description")
+    @Expected("Expecting exactly one valid FCS endpoint decription conforming to FCS 1.0 spec")
     void doExplainHasValidEndpointDescriptionInFCS10(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_1_0, "Only checked for FCS 1.0.");
 
@@ -145,6 +151,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Order(1100)
     @ClarinFCS20
     @DisplayName("Check for a valid FCS endpoint description")
+    @Expected("Expecting exactly one valid FCS endpoint decription conforming to FCS 2.0 spec")
     void doExplainHasValidEndpointDescriptionInFCS20(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0, "Only checked for FCS 2.0.");
 

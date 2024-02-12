@@ -80,6 +80,17 @@ public class FCSEndpointTester {
 
     private static void writeTestResults(Map<String, FCSTestResult> results, boolean hideAborted) {
         logger.info("Endpoint test results:");
+        long countFailed = results.values().stream()
+                .filter(r -> r.getTestExecutionResult().getStatus() == TestExecutionResult.Status.FAILED).count();
+        long countAborted = results.values().stream()
+                .filter(r -> r.getTestExecutionResult().getStatus() == TestExecutionResult.Status.ABORTED).count();
+        long countSuccess = results.values().stream()
+                .filter(r -> r.getTestExecutionResult().getStatus() == TestExecutionResult.Status.SUCCESSFUL).count();
+        logger.info("  --> Tests: {} ok, {} skipped, {} with error.", countSuccess, countAborted, countFailed);
+        logger.info("  --> {}",
+                (countFailed == 0) ? "Endpoint performs according to specification." : "Endpoint shows issues!");
+
+        logger.info("Endpoint test result details:");
         results.entrySet().forEach(e -> {
             FCSTestResult result = e.getValue();
 
@@ -111,6 +122,7 @@ public class FCSEndpointTester {
                             (result.getTestExecutionResult().getThrowable().isPresent())
                                     ? result.getTestExecutionResult().getThrowable().get().getMessage()
                                     : "~~ unknown ~~");
+                    logger.info("      * expected: {}", result.getExpected());
                     break;
                 case ABORTED:
                     // NOTE: might also be a warning?
@@ -118,6 +130,7 @@ public class FCSEndpointTester {
                             : (result.getTestExecutionResult().getThrowable().isPresent())
                                     ? result.getTestExecutionResult().getThrowable().get().getMessage()
                                     : "~~ unknown ~~");
+                    logger.info("      * expected: {}", result.getExpected());
                     break;
                 default:
                     break;

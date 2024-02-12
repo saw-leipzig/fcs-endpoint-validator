@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.tester;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,11 +16,15 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.platform.engine.TestDescriptor.Type;
 import org.junit.platform.engine.TestExecutionResult;
+import org.junit.platform.engine.TestSource;
+import org.junit.platform.engine.support.descriptor.MethodSource;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.Expected;
 
 public class FCSTestExecutionListener implements TestExecutionListener {
     protected static final Logger logger = LoggerFactory.getLogger(FCSTestExecutionListener.class);
@@ -57,7 +62,8 @@ public class FCSTestExecutionListener implements TestExecutionListener {
             List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponseInfos = gatherHttpRequestResponseInfos(
                     testIdentifier);
             String name = testIdentifier.getUniqueId();
-            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), testLogs,
+            String expected = getExpectedAnnotationValue(testIdentifier);
+            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), expected, testLogs,
                     httpRequestResponseInfos, testExecutionResult);
             results.put(name, result);
             logger.info("test finished: {} {}", testIdentifier.getUniqueId(), testExecutionResult);
@@ -71,7 +77,8 @@ public class FCSTestExecutionListener implements TestExecutionListener {
             List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponseInfos = gatherHttpRequestResponseInfos(
                     testIdentifier);
             String name = testIdentifier.getUniqueId();
-            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), testLogs,
+            String expected = getExpectedAnnotationValue(testIdentifier);
+            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(), expected, testLogs,
                     httpRequestResponseInfos, reason);
             results.put(name, result);
             logger.info("test skipped: {} {}", testIdentifier.getUniqueId(), reason);
@@ -198,4 +205,22 @@ public class FCSTestExecutionListener implements TestExecutionListener {
         return Collections.unmodifiableList(
                 (testHttpRequestResponseInfos != null) ? testHttpRequestResponseInfos : Collections.emptyList());
     }
+
+    private String getExpectedAnnotationValue(TestIdentifier testIdentifier) {
+        if (!testIdentifier.getSource().isPresent()) {
+            return null;
+        }
+        TestSource source = testIdentifier.getSource().get();
+        if (!(source instanceof MethodSource)) {
+            return null;
+        }
+        MethodSource mSource = (MethodSource) source;
+        Method method = mSource.getJavaMethod();
+        Expected expected = method.getAnnotation(Expected.class);
+        if (expected == null) {
+            return null;
+        }
+        return expected.value();
+    }
+
 }

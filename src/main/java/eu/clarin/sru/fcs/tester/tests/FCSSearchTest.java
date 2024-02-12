@@ -56,6 +56,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3000)
     @ClarinFCSAny
     @DisplayName("Search for random string")
+    @Expected("No errors or diagnostics (and zero or more records)")
     void doRandomCQLSearch(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -68,6 +69,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @ClarinFCSAny
     @DisplayName("Searching for random string with CLARIN FCS record schema '" + ClarinFCSRecordData.RECORD_SCHEMA
             + "'")
+    @Expected("No errors or diagnostics")
     void doRandomSearchWithRecordSchema(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -80,6 +82,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3030)
     @ClarinFCSLegacy
     @DisplayName("Search with missing 'query' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/7\"")
     void doSearchWithoutQueryArg(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY, "Only checked for Legacy FCS.");
 
@@ -93,6 +96,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3040)
     @ClarinFCSAny
     @DisplayName("Search with invalid 'recordPacking' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/71\"")
     void doSearchWithInvalidRecordPackingArg(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -105,6 +109,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3050)
     @ClarinFCSAny
     @DisplayName("Search with invalid value for 'startRecord' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
     void doSearchWithInvalidStartRecordArg(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -117,6 +122,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3060)
     @ClarinFCSAny
     @DisplayName("Search with invalid value of 0 for 'startRecord' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
     void doSearchWithInvalidStartRecordArgOfZero(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -129,6 +135,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3070)
     @ClarinFCSAny
     @DisplayName("Search with invalid value for 'maximumRecords' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
     void doSearchWithInvalidMaximumRecordsArg(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -141,6 +148,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3080)
     @ClarinFCSAny
     @DisplayName("Search with invalid value of -1 for 'maximumRecords' argument")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
     void doSearchWithInvalidMaximumRecordsArgOfNegativeOne(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -153,6 +161,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3090)
     @ClarinFCSAny
     @DisplayName("Search with invalid query")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/10\"")
     void doSearchWithInvalidQueryArg(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -165,6 +174,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3100)
     @ClarinFCSAny
     @DisplayName("Search to provoke first record position out of range diagnostic")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/61\"")
     void doSearchWithOutOfRangeRecordPositionArg(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
@@ -177,6 +187,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Order(3200)
     @ClarinFCSAny
     @DisplayName("Search for string with non-ASCII characters encoded as UTF-8")
+    @Expected("No errors or diagnostics (and zero or more records)")
     void doSearchWithNonASCIIQuery(FCSTestContext context) throws SRUClientException {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getUnicodeSearchTerm()));
@@ -189,6 +200,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @ClarinFCSLegacy
     @DisplayName("Search for user specified search term and requesting endpoint to return results in CLARIN-FCS record schema '"
             + FCS10_RECORD_SCHEMA + "'")
+    @Expected("Expecting at least one record in CLARIN-FCS legacy record schema (without any surrogate diagnostics)")
     @SuppressWarnings("deprecation")
     void doLegacyFCSSearchAndRequestRecordSchema(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY, "Only checked for Legacy FCS.");
@@ -265,6 +277,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @ClarinFCS20
     @DisplayName("Search for user specified search term and requesting endpoint to return results in CLARIN-FCS record schema '"
             + FCS_RECORD_SCHEMA + "'")
+    @Expected("Expecting at least one record in CLARIN-FCS record schema (without any surrogate diagnostics)")
     void doFCSSearchAndRequestRecordSchema(FCSTestContext context) throws SRUClientException {
         assumeFalse(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY, "Not check for Legacy FCS.");
 
@@ -340,6 +353,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @ClarinFCS20
     @DisplayName("Advanced-Search for user specified search term and requesting endpoint to return results in CLARIN-FCS record schema '"
             + FCS_RECORD_SCHEMA + "'")
+    @Expected("Expecting at least one record in CLARIN-FCS record schema (without any surrogate diagnostics)")
     void doFCS20SearchAndRequestRecordSchema(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0, "Only checked for FCS 2.0.");
 
