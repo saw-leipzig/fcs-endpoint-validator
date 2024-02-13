@@ -47,14 +47,18 @@ public class FCSEndpointTester {
         request.setUserSearchTerm("test");
         request.setFCSTestProfile(FCSTestProfile.CLARIN_FCS_2_0);
 
-        runValidation(request);
+        Map<String, FCSTestResult> results = runValidation(request);
+
+        // dumpLogs(results);
+        writeTestResults(results, false);
 
         logger.info("done");
     }
 
     // ----------------------------------------------------------------------
 
-    public static void runValidation(FCSEndpointValidationRequest request) throws IOException, SRUClientException {
+    public static Map<String, FCSTestResult> runValidation(FCSEndpointValidationRequest request)
+            throws IOException, SRUClientException {
         final boolean parallel = false;
         final boolean debug = true;
 
@@ -154,9 +158,7 @@ public class FCSEndpointTester {
 
         Map<String, FCSTestResult> results = testExecListener.getResults();
         // TODO: check resource leakage for http request/response stuff?
-
-        // dumpLogs(results);
-        writeTestResults(results, false);
+        return results;
     }
 
     private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
