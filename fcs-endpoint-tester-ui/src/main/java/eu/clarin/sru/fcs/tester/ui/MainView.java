@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.tester.ui;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -8,7 +9,9 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -28,16 +31,9 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 @Uses(Icon.class)
 public class MainView extends Composite<VerticalLayout> {
 
-    public MainView() {
-        // title row
-        HorizontalLayout titleRow = new HorizontalLayout();
-        titleRow.setSpacing(false);
-        titleRow.addClassName(Gap.LARGE);
-        titleRow.setWidth("100%");
-        titleRow.setHeight("min-content");
-        titleRow.setJustifyContentMode(JustifyContentMode.START);
-        titleRow.setAlignItems(Alignment.CENTER);
+    public VerticalLayout mainContent;
 
+    public MainView() {
         // header row (input fields)
         HorizontalLayout headerRow = new HorizontalLayout();
         headerRow.setSpacing(false);
@@ -53,34 +49,12 @@ public class MainView extends Composite<VerticalLayout> {
         mainContentScroller.setHeight("100%");
         mainContentScroller.getStyle().set("flex-grow", "1");
         mainContentScroller.setScrollDirection(ScrollDirection.VERTICAL);
-        VerticalLayout mainContent = new VerticalLayout();
+        mainContent = new VerticalLayout();
+        mainContent.addClassName(Gap.XSMALL);
         mainContent.setWidth("100%");
         mainContent.setHeight("100%");
         mainContent.getStyle().set("flex-grow", "1");
         mainContentScroller.setContent(mainContent);
-
-        // footer row (at bottom)
-        HorizontalLayout footerRow = new HorizontalLayout();
-        footerRow.addClassName(Gap.XSMALL);
-        footerRow.addClassName(Padding.XSMALL);
-        footerRow.setWidth("100%");
-        footerRow.setHeight("min-content");
-        // footerRow.setAlignItems(Alignment.END);
-        // footerRow.setJustifyContentMode(JustifyContentMode.START);
-        footerRow.setJustifyContentMode(JustifyContentMode.CENTER);
-        footerRow.setAlignItems(Alignment.CENTER);
-
-        // --------------------------------------------------------
-        // title header
-
-        Icon iconTitle = new Icon();
-        titleRow.add(iconTitle);
-
-        H1 lblTitle = new H1();
-        lblTitle.setText("FCS SRU Endpoint Conformance Tester");
-        lblTitle.setWidth("max-content");
-        lblTitle.getStyle().set("font-size", "var(--lumo-font-size-xxl)");
-        titleRow.add(lblTitle);
 
         // --------------------------------------------------------
         // input text fiels
@@ -141,6 +115,71 @@ public class MainView extends Composite<VerticalLayout> {
         // --------------------------------------------------------
         // main content
 
+        // mainContent.add(createNoResultsPlaceholder());
+
+        H2 txtResultsFor = new H2();
+        txtResultsFor.add("Result for ");
+        txtResultsFor.add("https://fcs.data.saw-leipzig.de/dict");
+        txtResultsFor.add(" (using test profile ");
+        txtResultsFor.add("CLARIN FCS 2.0");
+        txtResultsFor.add("):");
+        txtResultsFor.getStyle().set("font-size", "var(--lumo-font-size-l)");
+        mainContent.add(txtResultsFor);
+
+        Span txtTestResultSummary = new Span();
+        Icon icoExlamation = VaadinIcon.EXCLAMATION.create();
+        icoExlamation.setColor("var(--lumo-error-color)");
+        icoExlamation.setSize("var(--lumo-icon-size-s)");
+        txtTestResultSummary.add(icoExlamation);
+        txtTestResultSummary.add("The endpoint fails to pass in 2 tests.");
+        // txtTestResultSummary.getStyle().set("margin", "0");
+        mainContent.add(txtTestResultSummary);
+
+        Span txtTestResultCounts = new Span();
+        // txtTestResultCounts.getStyle().set("margin", "0");
+        txtTestResultCounts.add("Success: ");
+        txtTestResultCounts.add(Integer.toString(12));
+        txtTestResultCounts.add(", Warnings: ");
+        txtTestResultCounts.add(Integer.toString(0));
+        txtTestResultCounts.add(", Errors: ");
+        txtTestResultCounts.add(Integer.toString(2));
+        txtTestResultCounts.add(", Skipped: ");
+        txtTestResultCounts.add(Integer.toString(1));
+        mainContent.add(txtTestResultCounts);
+
+        H2 txtResultsDetails = new H2("Results for individual test cases:");
+        txtResultsDetails.getStyle().set("font-size", "var(--lumo-font-size-l)");
+        mainContent.add(txtResultsDetails);
+
+        // --------------------------------------------------------
+        // compose all
+
+        getContent().setWidth("100%");
+        getContent().getStyle().set("flex-grow", "1");
+        getContent().getStyle().set("padding-bottom", "0");
+        getContent().setHeight("100%");
+        // getContent().setSpacing(false);
+        // getContent().setPadding(false);
+
+        getContent().add(createHeader());
+        getContent().add(headerRow);
+        getContent().add(mainContentScroller);
+        getContent().add(createFooter());
+
+        // Button button = new Button("Click me",
+        // event -> add(new Paragraph("Clicked!")));
+
+        // add(button);
+    }
+
+    public Component createNoResultsPlaceholder() {
+        VerticalLayout lytNoResults = new VerticalLayout();
+        lytNoResults.setWidth("100%");
+        lytNoResults.setHeight("100%");
+        lytNoResults.getStyle().set("flex-grow", "1");
+        lytNoResults.setJustifyContentMode(JustifyContentMode.CENTER);
+        lytNoResults.setAlignItems(Alignment.CENTER);
+
         Paragraph txtNoResults = new Paragraph();
         txtNoResults.setText("No results available.");
         txtNoResults.getStyle()
@@ -148,18 +187,40 @@ public class MainView extends Composite<VerticalLayout> {
                 .set("font-weight", "bold")
                 .set("color", "var(--lumo-secondary-text-color)");
 
-        VerticalLayout lytNoResults = new VerticalLayout();
-        lytNoResults.setWidth("100%");
-        lytNoResults.setHeight("100%");
-        lytNoResults.getStyle().set("flex-grow", "1");
-        lytNoResults.setJustifyContentMode(JustifyContentMode.CENTER);
-        lytNoResults.setAlignItems(Alignment.CENTER);
         lytNoResults.add(txtNoResults);
 
-        mainContent.add(lytNoResults);
+        return lytNoResults;
+    }
 
-        // --------------------------------------------------------
-        // footer
+    public Component createHeader() {
+        HorizontalLayout titleRow = new HorizontalLayout();
+        titleRow.setSpacing(false);
+        titleRow.addClassName(Gap.LARGE);
+        titleRow.setWidth("100%");
+        titleRow.setHeight("min-content");
+        titleRow.setJustifyContentMode(JustifyContentMode.START);
+        titleRow.setAlignItems(Alignment.CENTER);
+
+        Icon iconTitle = new Icon();
+        titleRow.add(iconTitle);
+
+        H1 lblTitle = new H1();
+        lblTitle.setText("FCS SRU Endpoint Conformance Tester");
+        lblTitle.setWidth("max-content");
+        lblTitle.getStyle().set("font-size", "var(--lumo-font-size-xxl)");
+        titleRow.add(lblTitle);
+
+        return titleRow;
+    }
+
+    public Component createFooter() {
+        HorizontalLayout footerRow = new HorizontalLayout();
+        footerRow.addClassName(Gap.XSMALL);
+        footerRow.addClassName(Padding.XSMALL);
+        footerRow.setWidth("100%");
+        footerRow.setHeight("min-content");
+        footerRow.setJustifyContentMode(JustifyContentMode.CENTER);
+        footerRow.setAlignItems(Alignment.CENTER);
 
         Paragraph txtFooter = new Paragraph();
         txtFooter.setText("For questions of bug reports please contact ");
@@ -175,25 +236,7 @@ public class MainView extends Composite<VerticalLayout> {
 
         footerRow.add(txtFooter);
 
-        // --------------------------------------------------------
-        // compose all
-
-        getContent().setWidth("100%");
-        getContent().getStyle().set("flex-grow", "1");
-        getContent().getStyle().set("padding-bottom", "0");
-        getContent().setHeight("100%");
-        // getContent().setSpacing(false);
-        // getContent().setPadding(false);
-
-        getContent().add(titleRow);
-        getContent().add(headerRow);
-        getContent().add(mainContentScroller);
-        // getContent().add(new Hr());
-        getContent().add(footerRow);
-
-        // Button button = new Button("Click me",
-        // event -> add(new Paragraph("Clicked!")));
-
-        // add(button);
+        return footerRow;
     }
+
 }
