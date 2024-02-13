@@ -6,8 +6,6 @@ import java.util.Map;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 public class FCSTestContextFactory {
-    // singleton
-    private static FCSTestContextFactory instance;
 
     // properties for each FCSTestContext
     private Map<String, Object> properties;
@@ -20,15 +18,8 @@ public class FCSTestContextFactory {
 
     // ----------------------------------------------------------------------
 
-    private static FCSTestContextFactory newInstance() {
+    public static FCSTestContextFactory newInstance() {
         return new FCSTestContextFactory();
-    }
-
-    public static synchronized FCSTestContextFactory getInstance() {
-        if (instance == null) {
-            instance = newInstance();
-        }
-        return instance;
     }
 
     // ----------------------------------------------------------------------

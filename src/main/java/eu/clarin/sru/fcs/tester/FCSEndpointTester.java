@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -80,18 +81,25 @@ public class FCSEndpointTester {
         httpClientFactory.setProperty(FCSTestHttpClientFactory.PROPERTY_RESPONSE_INTERCEPTOR, httpReqRespRecorder);
 
         // configure test context
-        FCSTestContextFactory contextFactory = FCSTestContextFactory.getInstance();
+        FCSTestContextFactory contextFactory = FCSTestContextFactory.newInstance();
         contextFactory.setFCSTestProfile(request.getFCSTestProfile());
         contextFactory.setStrictMode(request.isStrictMode());
         contextFactory.setBaseURI(request.getBaseURI());
         contextFactory.setUserSearchTerm(request.getUserSearchTerm());
         // we set client here to reuse it for all tests
         contextFactory.setHttpClient(httpClientFactory.newClient());
+        // and store the context factory to be used in the test launcher
+        final String factoryId = UUID.randomUUID().toString();
+        FCSTestContextFactoryStore.set(factoryId, contextFactory);
 
         // what tests to run
         LauncherDiscoveryRequestBuilder ldRequestBuilder = LauncherDiscoveryRequestBuilder.request()
+                // what test classes to run
                 .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
                 .filters(includeClassNamePatterns(".*Test"))
+
+                // lets store our factory for the ParameterResolver
+                .configurationParameter(FCSTestContextParameterResolver.PROPERTY_TEST_CONTEXT_FACTORY_ID, factoryId)
 
                 // enable order based on @Order annotation
                 // (might not be guaranteed if running concurrently)
@@ -106,6 +114,7 @@ public class FCSEndpointTester {
                     .configurationParameter("junit.jupiter.execution.parallel.mode.default", "same_thread")
                     .configurationParameter("junit.jupiter.execution.parallel.mode.classes.default", "concurrent");
         }
+
         LauncherDiscoveryRequest ldRequest = ldRequestBuilder.build();
 
         // only for debugging
