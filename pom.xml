@@ -27,6 +27,7 @@
 
   <modules>
     <module>fcs-endpoint-tester-junit</module>
+    <module>fcs-endpoint-tester-ui</module>
   </modules>
 
   <build>
