@@ -10,14 +10,14 @@ public class FCSTestResult {
     private String name;
     private String expected;
     private List<LogEvent> logs;
-    private List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponses;
+    private List<HttpRequestResponseInfo> httpRequestResponses;
     private TestExecutionResult testExecutionResult = null;
     private String skipReason = null;
 
     // ----------------------------------------------------------------------
 
     public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
-            List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponses,
+            List<HttpRequestResponseInfo> httpRequestResponses,
             TestExecutionResult testExecutionResult, String skipReason) {
         this.uniqueId = uniqueId;
         this.name = name;
@@ -29,13 +29,13 @@ public class FCSTestResult {
     }
 
     public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
-            List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponses,
+            List<HttpRequestResponseInfo> httpRequestResponses,
             TestExecutionResult testExecutionResult) {
         this(uniqueId, name, expected, logs, httpRequestResponses, testExecutionResult, null);
     }
 
     public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
-            List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> httpRequestResponses,
+            List<HttpRequestResponseInfo> httpRequestResponses,
             String skipReason) {
         this(uniqueId, name, expected, logs, httpRequestResponses, null, skipReason);
     }
@@ -72,7 +72,7 @@ public class FCSTestResult {
         return logs;
     }
 
-    public List<HttpRequestResponseRecordingInterceptor.HttpRequestResponseInfo> getHttpRequestResponseInfos() {
+    public List<HttpRequestResponseInfo> getHttpRequestResponseInfos() {
         return httpRequestResponses;
     }
 

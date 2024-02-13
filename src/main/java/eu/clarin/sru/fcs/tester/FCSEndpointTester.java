@@ -71,6 +71,7 @@ public class FCSEndpointTester {
 
         // run tests
         Map<String, FCSTestResult> results = runTests(false, reqRespCapturer);
+        // TODO: check resource leakage for http request/response stuff?
 
         // dumpLogs(results);
         writeTestResults(results, false);
