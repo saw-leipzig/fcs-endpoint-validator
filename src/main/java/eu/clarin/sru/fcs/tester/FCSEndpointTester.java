@@ -41,43 +41,172 @@ public class FCSEndpointTester {
         logger.info("Start FCS Endpoint Tester!");
 
         // required user supplied parameters
-        final String baseURI = "https://fcs.data.saw-leipzig.de/lcc";
-        final String userSearchTerm = "test";
-        FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_2_0;
+        final FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
+        request.setBaseURI("https://fcs.data.saw-leipzig.de/lcc");
+        request.setUserSearchTerm("test");
+        request.setFCSTestProfile(FCSTestProfile.CLARIN_FCS_2_0);
+
+        runValidation(request);
+
+        logger.info("done");
+    }
+
+    // ----------------------------------------------------------------------
+
+    public static void runValidation(FCSEndpointValidationRequest request) throws IOException, SRUClientException {
+        final boolean parallel = false;
+        final boolean debug = true;
 
         // initial check if endpoint is available
-        performProbeRequest(baseURI);
-        logger.debug("Endpoint at '{}' can be reached.", baseURI);
+        if (request.isPerformProbeRequest()) {
+            // will fail early if endpoint can't be reached!
+            performProbeRequest(request.getBaseURI());
+            logger.debug("Endpoint at '{}' can be reached.", request.getBaseURI());
+        }
 
-        // if not supplied, try to detect profile
-        if (profile == null) {
+        // if not supplied, try to fcs test detect profile
+        if (request.getFCSTestProfile() == null) {
             logger.info("No endpoint version supplied, trying to detect ...");
-            profile = detectFCSEndpointVersion(baseURI);
+            final FCSTestProfile detectedProfile = detectFCSEndpointVersion(request.getBaseURI());
+            request.setFCSTestProfile(detectedProfile);
         }
 
         // capture request/response pairs
-        HttpRequestResponseRecordingInterceptor reqRespCapturer = new HttpRequestResponseRecordingInterceptor();
+        HttpRequestResponseRecordingInterceptor httpReqRespRecorder = new HttpRequestResponseRecordingInterceptor();
         FCSTestHttpClientFactory httpClientFactory = FCSTestHttpClientFactory.getInstance();
-        httpClientFactory.setProperty(FCSTestHttpClientFactory.PROPERTY_REQUEST_INTERCEPTOR, reqRespCapturer);
-        httpClientFactory.setProperty(FCSTestHttpClientFactory.PROPERTY_RESPONSE_INTERCEPTOR, reqRespCapturer);
+        httpClientFactory.setConnectTimeout(request.getConnectTimeout());
+        httpClientFactory.setSocketTimeout(request.getSocketTimeout());
+        httpClientFactory.setProperty(FCSTestHttpClientFactory.PROPERTY_REQUEST_INTERCEPTOR, httpReqRespRecorder);
+        httpClientFactory.setProperty(FCSTestHttpClientFactory.PROPERTY_RESPONSE_INTERCEPTOR, httpReqRespRecorder);
 
         // configure test context
         FCSTestContextFactory contextFactory = FCSTestContextFactory.getInstance();
-        contextFactory.setBaseURI(baseURI);
-        contextFactory.setFCSTestProfile(profile);
-        contextFactory.setUserSearchTerm(userSearchTerm);
+        contextFactory.setFCSTestProfile(request.getFCSTestProfile());
+        contextFactory.setStrictMode(request.isStrictMode());
+        contextFactory.setBaseURI(request.getBaseURI());
+        contextFactory.setUserSearchTerm(request.getUserSearchTerm());
         // we set client here to reuse it for all tests
         contextFactory.setHttpClient(httpClientFactory.newClient());
 
+        // what tests to run
+        LauncherDiscoveryRequestBuilder ldRequestBuilder = LauncherDiscoveryRequestBuilder.request()
+                .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
+                .filters(includeClassNamePatterns(".*Test"))
+
+                // enable order based on @Order annotation
+                // (might not be guaranteed if running concurrently)
+                .configurationParameter("junit.jupiter.testmethod.order.default",
+                        "org.junit.jupiter.api.MethodOrderer$OrderAnnotation")
+                .configurationParameter("junit.jupiter.testclass.order.default ",
+                        "org.junit.jupiter.api.ClassOrderer$OrderAnnotation");
+
+        if (parallel) {
+            logger.info("Will perform tests in parallel (by class)!");
+            ldRequestBuilder.configurationParameter("junit.jupiter.execution.parallel.enabled", "true")
+                    .configurationParameter("junit.jupiter.execution.parallel.mode.default", "same_thread")
+                    .configurationParameter("junit.jupiter.execution.parallel.mode.classes.default", "concurrent");
+        }
+        LauncherDiscoveryRequest ldRequest = ldRequestBuilder.build();
+
+        // only for debugging
+        SummaryGeneratingListener listener = new SummaryGeneratingListener();
+
+        // to capture test logs, results etc.
+        FCSTestExecutionListener testExecListener = new FCSTestExecutionListener(httpReqRespRecorder);
+
         // run tests
-        Map<String, FCSTestResult> results = runTests(false, reqRespCapturer);
+        try (LauncherSession session = LauncherFactory.openSession()) {
+            Launcher launcher = session.getLauncher();
+            // Register test execution listeners
+            if (debug) {
+                launcher.registerTestExecutionListeners(listener);
+            }
+            // to track test progress and capture logs/http stuff
+            launcher.registerTestExecutionListeners(testExecListener);
+
+            // Discover tests and build a test plan
+            TestPlan testPlan = launcher.discover(ldRequest);
+
+            // Execute test plan
+            launcher.execute(testPlan);
+            // Alternatively, execute the request directly
+            // launcher.execute(ldRequest);
+        }
+
+        if (debug) {
+            TestExecutionSummary summary = listener.getSummary();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintWriter pw = new PrintWriter(baos);
+            summary.printTo(pw);
+            Arrays.asList(baos.toString().split("\n")).stream()
+                    .filter(l -> !l.isBlank())
+                    .forEach(l -> logger.info("{}", l.stripLeading()));
+        }
+
+        Map<String, FCSTestResult> results = testExecListener.getResults();
         // TODO: check resource leakage for http request/response stuff?
 
         // dumpLogs(results);
         writeTestResults(results, false);
-
-        logger.info("done");
     }
+
+    private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
+        final ClarinFCSEndpointVersionAutodetector versionAutodetector = new ClarinFCSEndpointVersionAutodetector();
+
+        AutodetectedFCSVersion version = null;
+        try {
+            version = versionAutodetector.autodetectVersion(endpointURI);
+        } catch (SRUClientException e) {
+            logger.error("Error trying to detect endpoint version", e);
+            throw new SRUClientException("An error occured while auto-detecting CLARIN-FCS version", e);
+        }
+
+        logger.debug("Auto-detected endpoint version = {}", version);
+
+        FCSTestProfile profile = null;
+        switch (version) {
+            case FCS_LEGACY:
+                profile = FCSTestProfile.CLARIN_FCS_LEGACY;
+                break;
+            case FCS_1_0:
+                profile = FCSTestProfile.CLARIN_FCS_1_0;
+                break;
+            case FCS_2_0:
+                profile = FCSTestProfile.CLARIN_FCS_2_0;
+                break;
+            case UNKNOWN:
+                /* $FALL-THROUGH$ */
+            default:
+                throw new SRUClientException("Unable to auto-detect CLARIN-FCS version!");
+        }
+
+        return profile;
+    }
+
+    private static void performProbeRequest(final String baseURI)
+            throws IOException {
+        try {
+            logger.debug("performing initial probe request to {}", baseURI);
+            final CloseableHttpClient client = FCSTestHttpClientFactory.getInstance().newClient();
+            final HttpHead request = new HttpHead(baseURI);
+            HttpResponse response = null;
+            try {
+                response = client.execute(request);
+                StatusLine status = response.getStatusLine();
+                if (status.getStatusCode() != HttpStatus.SC_OK) {
+                    throw new IOException(
+                            "Probe request to endpoint returned unexpected HTTP status " + status.getStatusCode());
+                }
+            } finally {
+                HttpClientUtils.closeQuietly(response);
+                HttpClientUtils.closeQuietly(client);
+            }
+        } catch (ClientProtocolException e) {
+            throw new IOException(e);
+        }
+    }
+
+    // ----------------------------------------------------------------------
 
     private static void writeTestResults(Map<String, FCSTestResult> results, boolean hideAborted) {
         logger.info("Endpoint test results:");
@@ -156,111 +285,6 @@ public class FCSEndpointTester {
         StringBuilder buf = new StringBuilder();
         logNameConverter.abbreviate(classname, buf);
         return buf.toString();
-    }
-
-    protected static Map<String, FCSTestResult> runTests(boolean concurrent,
-            HttpRequestResponseRecordingInterceptor httpReqRespRecorder) {
-        // what tests to run
-        LauncherDiscoveryRequestBuilder requestBuilder = LauncherDiscoveryRequestBuilder.request()
-                .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
-                .filters(includeClassNamePatterns(".*Test"))
-                // enable order based on @Order annotation
-                // (might not be guaranteed if running concurrently)
-                .configurationParameter("junit.jupiter.testmethod.order.default",
-                        "org.junit.jupiter.api.MethodOrderer$OrderAnnotation")
-                .configurationParameter("junit.jupiter.testclass.order.default ",
-                        "org.junit.jupiter.api.ClassOrderer$OrderAnnotation");
-        if (concurrent) {
-            logger.info("Will perform tests in parallel (by class)!");
-            requestBuilder.configurationParameter("junit.jupiter.execution.parallel.enabled", "true")
-                    .configurationParameter("junit.jupiter.execution.parallel.mode.default", "same_thread")
-                    .configurationParameter("junit.jupiter.execution.parallel.mode.classes.default", "concurrent");
-        }
-        LauncherDiscoveryRequest request = requestBuilder.build();
-
-        SummaryGeneratingListener listener = new SummaryGeneratingListener();
-
-        // to capture test logs, results etc.
-        FCSTestExecutionListener testExecListener = new FCSTestExecutionListener(httpReqRespRecorder);
-
-        // run tests
-        try (LauncherSession session = LauncherFactory.openSession()) {
-            Launcher launcher = session.getLauncher();
-            // Register a listener of your choice
-            launcher.registerTestExecutionListeners(listener, testExecListener);
-            // Discover tests and build a test plan
-            TestPlan testPlan = launcher.discover(request);
-            // Execute test plan
-            launcher.execute(testPlan);
-            // Alternatively, execute the request directly
-            // launcher.execute(request);
-        }
-
-        TestExecutionSummary summary = listener.getSummary();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintWriter pw = new PrintWriter(baos);
-        summary.printTo(pw);
-        Arrays.asList(baos.toString().split("\n")).stream()
-                .filter(l -> !l.isBlank())
-                .forEach(l -> logger.info("{}", l.stripLeading()));
-
-        return testExecListener.getResults();
-    }
-
-    private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
-        final ClarinFCSEndpointVersionAutodetector versionAutodetector = new ClarinFCSEndpointVersionAutodetector();
-
-        AutodetectedFCSVersion version = null;
-        try {
-            version = versionAutodetector.autodetectVersion(endpointURI);
-        } catch (SRUClientException e) {
-            logger.error("Error trying to detect endpoint version", e);
-            throw new SRUClientException("An error occured while auto-detecting CLARIN-FCS version", e);
-        }
-
-        logger.debug("Auto-detected endpoint version = {}", version);
-
-        FCSTestProfile profile = null;
-        switch (version) {
-            case FCS_LEGACY:
-                profile = FCSTestProfile.CLARIN_FCS_LEGACY;
-                break;
-            case FCS_1_0:
-                profile = FCSTestProfile.CLARIN_FCS_1_0;
-                break;
-            case FCS_2_0:
-                profile = FCSTestProfile.CLARIN_FCS_2_0;
-                break;
-            case UNKNOWN:
-                /* $FALL-THROUGH$ */
-            default:
-                throw new SRUClientException("Unable to auto-detect CLARIN-FCS version!");
-        }
-
-        return profile;
-    }
-
-    private static void performProbeRequest(final String baseURI)
-            throws IOException {
-        try {
-            logger.debug("performing initial probe request to {}", baseURI);
-            final CloseableHttpClient client = FCSTestHttpClientFactory.getInstance().newClient();
-            final HttpHead request = new HttpHead(baseURI);
-            HttpResponse response = null;
-            try {
-                response = client.execute(request);
-                StatusLine status = response.getStatusLine();
-                if (status.getStatusCode() != HttpStatus.SC_OK) {
-                    throw new IOException(
-                            "Probe request to endpoint returned unexpected HTTP status " + status.getStatusCode());
-                }
-            } finally {
-                HttpClientUtils.closeQuietly(response);
-                HttpClientUtils.closeQuietly(client);
-            }
-        } catch (ClientProtocolException e) {
-            throw new IOException(e);
-        }
     }
 
 }
