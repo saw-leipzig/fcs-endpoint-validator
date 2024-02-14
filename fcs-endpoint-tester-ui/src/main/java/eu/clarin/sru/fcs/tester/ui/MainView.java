@@ -1,6 +1,9 @@
 package eu.clarin.sru.fcs.tester.ui;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.accordion.Accordion;
@@ -87,11 +90,6 @@ public class MainView extends VerticalLayout {
             mainContent.add(createNoResultsPlaceholder());
             btnStart.setEnabled(true);
         });
-
-        // Button button = new Button("Click me",
-        // event -> add(new Paragraph("Clicked!")));
-
-        // add(button);
     }
 
     public Component createHeader() {
@@ -155,6 +153,27 @@ public class MainView extends VerticalLayout {
         txtEndpointURL.setClearButtonVisible(true);
         txtEndpointURL.setRequiredIndicatorVisible(true);
         txtEndpointURL.setPrefixComponent(VaadinIcon.LINK.create());
+        txtEndpointURL.setMaxLength(255);
+        txtEndpointURL.setPlaceholder("Please enter BaseURI of endpoint.");
+        txtEndpointURL.setErrorMessage("An endpoint BaseURI is required!");
+        txtEndpointURL.setManualValidation(true);
+        txtEndpointURL.addValueChangeListener(event -> {
+            final String value = event.getValue();
+            if (Objects.equals(value, "") || value.isBlank()) {
+                txtEndpointURL.setInvalid(true);
+                txtEndpointURL.setErrorMessage("An endpoint BaseURI is required!");
+            } else {
+                try {
+                    new URL(value);
+                    // if ok, then signal
+                    txtEndpointURL.setInvalid(false);
+                } catch (MalformedURLException e) {
+                    // on error, show hint
+                    txtEndpointURL.setInvalid(true);
+                    txtEndpointURL.setErrorMessage("Invalid URI syntax!");
+                }
+            }
+        });
         flInputs.addFormItem(txtEndpointURL, "Endpoint BaseURL");
 
         txtSearchTerm = new TextField();
@@ -163,6 +182,9 @@ public class MainView extends VerticalLayout {
         txtSearchTerm.setClearButtonVisible(true);
         txtSearchTerm.setRequiredIndicatorVisible(true);
         txtSearchTerm.setPrefixComponent(VaadinIcon.SEARCH.create());
+        txtSearchTerm.setMaxLength(64);
+        txtSearchTerm.setPlaceholder("Please enter a word that occurs at least once in you data.");
+        txtSearchTerm.setErrorMessage("A search term is required!");
         flInputs.addFormItem(txtSearchTerm, "Search Term");
 
         return flInputs;
