@@ -37,7 +37,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     void doDefaultExplain(FCSTestContext context) throws SRUClientException {
         SRUExplainRequest req = context.createExplainRequest();
         SRUExplainResponse res = context.getClient().explain(req);
-        assertEquals(0, res.getDiagnosticsCount(), "No diagnostics should exist.");
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
 
     @Test

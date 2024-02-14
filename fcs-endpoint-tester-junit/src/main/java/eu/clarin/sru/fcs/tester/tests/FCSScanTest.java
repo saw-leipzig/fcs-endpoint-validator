@@ -48,9 +48,10 @@ public class FCSScanTest extends AbstractFCSTest {
 
         assumeFalse(hasDiagnostic(res, "info:srw/diagnostic/1/4"), "Endpoint does not support 'scan' operation");
 
-        assertEquals(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint");
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint");
 
-        assumeTrue(res.getTermsCount() >= 1, "Scan on 'fcs.resource = root' should yield at least one collection");
+        assumeTrueElseWarn(res.getTermsCount() >= 1,
+                "Scan on 'fcs.resource = root' should yield at least one collection");
     }
 
     @Test
@@ -67,7 +68,7 @@ public class FCSScanTest extends AbstractFCSTest {
         SRUScanResponse res = context.getClient().scan(req);
 
         assumeFalse(hasDiagnostic(res, "info:srw/diagnostic/1/4"), "Endpoint does not support 'scan' operation");
-        assertEquals(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
         assertEquals(1, res.getTermsCount(), "Endpoint did not honor 'maximumTerms' argument");
     }
 

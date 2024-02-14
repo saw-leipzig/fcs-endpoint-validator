@@ -80,7 +80,7 @@ public class FCSSearchTest extends AbstractFCSTest {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
-        assertEquals(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
 
     @Test
@@ -94,7 +94,7 @@ public class FCSSearchTest extends AbstractFCSTest {
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getRandomSearchTerm()));
         req.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
-        assertEquals(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
 
     @Test
@@ -211,7 +211,7 @@ public class FCSSearchTest extends AbstractFCSTest {
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(getUnicodeSearchTerm()));
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
-        assertEquals(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
 
     @Test
@@ -232,6 +232,7 @@ public class FCSSearchTest extends AbstractFCSTest {
 
         assertFalse(hasDiagnostic(res, "info:srw/diagnostic/1/66"),
                 "Endpoint claims to not support FCS record schema (" + FCS10_RECORD_SCHEMA + ")");
+        // assumeTrueElseWarn
         assumeTrue(0 != res.getRecordsCount(), "Endpoint has no results for search term >> "
                 + context.getUserSearchTerm() + " <<. Please supply a different search term.");
         assertTrue(res.getRecordsCount() <= req.getMaximumRecords(),
@@ -308,6 +309,7 @@ public class FCSSearchTest extends AbstractFCSTest {
 
         assertFalse(hasDiagnostic(res, "info:srw/diagnostic/1/66"),
                 "Endpoint claims to not support FCS record schema (" + FCS_RECORD_SCHEMA + ")");
+        // assumeTrueElseWarn
         assumeTrue(0 != res.getRecordsCount(), "Endpoint has no results for search term >> "
                 + context.getUserSearchTerm() + " <<. Please supply a different search term.");
         assertTrue(res.getRecordsCount() <= req.getMaximumRecords(),
@@ -392,6 +394,7 @@ public class FCSSearchTest extends AbstractFCSTest {
 
         assertFalse(hasDiagnostic(res, "info:srw/diagnostic/1/66"),
                 "Endpoint claims to not support FCS record schema (" + FCS_RECORD_SCHEMA + ")");
+        // assumeTrueElseWarn
         assumeTrue(0 != res.getRecordsCount(), "Endpoint has no results for search term >> "
                 + context.getUserSearchTerm() + " <<. Please supply a different search term.");
         assertTrue(res.getRecordsCount() <= req.getMaximumRecords(),

@@ -221,13 +221,12 @@ public class FCSEndpointTester {
 
     private static void writeTestResults(Map<String, FCSTestResult> results, boolean hideAborted) {
         logger.info("Endpoint test results:");
-        long countFailed = results.values().stream()
-                .filter(r -> r.getTestExecutionResult().getStatus() == TestExecutionResult.Status.FAILED).count();
-        long countAborted = results.values().stream()
-                .filter(r -> r.getTestExecutionResult().getStatus() == TestExecutionResult.Status.ABORTED).count();
-        long countSuccess = results.values().stream()
-                .filter(r -> r.getTestExecutionResult().getStatus() == TestExecutionResult.Status.SUCCESSFUL).count();
-        logger.info("  --> Tests: {} ok, {} skipped, {} with error.", countSuccess, countAborted, countFailed);
+        long countFailed = results.values().stream().filter(r -> r.isFailure()).count();
+        long countSkipped = results.values().stream().filter(r -> r.isSkipped()).count();
+        long countWarned = results.values().stream().filter(r -> r.isWarning()).count();
+        long countSuccess = results.values().stream().filter(r -> r.isSuccess()).count();
+        logger.info("  --> Tests: {} ok, {} skipped, {} with warning, {} with error.", countSuccess, countSkipped,
+                countWarned, countFailed);
         logger.info("  --> {}",
                 (countFailed == 0) ? "Endpoint performs according to specification." : "Endpoint shows issues!");
 
@@ -241,23 +240,30 @@ public class FCSEndpointTester {
             }
 
             final String status;
-            switch (result.getTestExecutionResult().getStatus()) {
-                case SUCCESSFUL:
-                    status = "✔";
-                    break;
-                case FAILED:
-                    status = "✘";
-                    break;
-                case ABORTED:
-                    status = "!";
-                    break;
-                default:
-                    status = "?"; // ✨ // this should never happen
-                    break;
+            if (result.getStatus() != null) {
+                switch (result.getStatus()) {
+                    case SUCCESSFUL:
+                        status = "✔";
+                        break;
+                    case FAILED:
+                        status = "✘";
+                        break;
+                    case WARNING:
+                        status = "!";
+                        break;
+                    case SKIPPED:
+                        status = "-";
+                        break;
+                    default:
+                        status = "?"; // ✨ // this should never happen
+                        break;
+                }
+            } else {
+                status = "~";
             }
             logger.info(" {} >> {} << ({} logs, {} https)", status, result.getName(), result.getLogs().size(),
                     result.getHttpRequestResponseInfos().size());
-            switch (result.getTestExecutionResult().getStatus()) {
+            switch (result.getStatus()) {
                 case FAILED:
                     logger.info("      * failed, reason: {}",
                             (result.getTestExecutionResult().getThrowable().isPresent())
@@ -265,8 +271,14 @@ public class FCSEndpointTester {
                                     : "~~ unknown ~~");
                     logger.info("      * expected: {}", result.getExpected());
                     break;
-                case ABORTED:
-                    // NOTE: might also be a warning?
+                case WARNING:
+                    logger.info("      * aborted with warning, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
+                            : (result.getTestExecutionResult().getThrowable().isPresent())
+                                    ? result.getTestExecutionResult().getThrowable().get().getMessage()
+                                    : "~~ unknown ~~");
+                    logger.info("      * expected: {}", result.getExpected());
+                    break;
+                case SKIPPED:
                     logger.info("      * skipped, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
                             : (result.getTestExecutionResult().getThrowable().isPresent())
                                     ? result.getTestExecutionResult().getThrowable().get().getMessage()

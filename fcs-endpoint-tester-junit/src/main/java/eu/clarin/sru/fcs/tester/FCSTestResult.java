@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.apache.logging.log4j.core.LogEvent;
 import org.junit.platform.engine.TestExecutionResult;
+import org.opentest4j.TestAbortedException;
+
+import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.TestAbortedWithWarningException;
 
 public class FCSTestResult {
     private String uniqueId;
@@ -83,4 +86,85 @@ public class FCSTestResult {
     public String getSkipReason() {
         return skipReason;
     }
+
+    public String getMessage() {
+        // message why skipped or failed (aborted, warning, error, ...)
+        if (skipReason != null) {
+            return skipReason;
+        }
+        if (testExecutionResult.getThrowable().isPresent()) {
+            return testExecutionResult.getThrowable().get().getMessage();
+        }
+        return null;
+    }
+
+    // ----------------------------------------------------------------------
+
+    public static enum FCSTestResultStatus {
+        SUCCESSFUL,
+        FAILED,
+        WARNING,
+        SKIPPED;
+    }
+
+    public FCSTestResultStatus getStatus() {
+        if (testExecutionResult == null) {
+            // see skipReason
+            return FCSTestResultStatus.SKIPPED;
+        }
+        switch (testExecutionResult.getStatus()) {
+            case SUCCESSFUL:
+                return FCSTestResultStatus.SUCCESSFUL;
+            case FAILED:
+                return FCSTestResultStatus.FAILED;
+            case ABORTED:
+                if (testExecutionResult.getThrowable().isPresent()) {
+                    Throwable ex = testExecutionResult.getThrowable().get();
+                    if (ex instanceof TestAbortedException && ex.getMessage().startsWith("Assumption failed")) {
+                        return FCSTestResultStatus.SKIPPED;
+                    }
+                }
+
+        }
+        return null;
+    }
+
+    public boolean isSuccess() {
+        return (testExecutionResult != null) ? testExecutionResult.getStatus() == TestExecutionResult.Status.SUCCESSFUL
+                : false;
+    }
+
+    public boolean isFailure() {
+        return (testExecutionResult != null) ? testExecutionResult.getStatus() == TestExecutionResult.Status.FAILED
+                : false;
+    }
+
+    public boolean isWarning() {
+        if (testExecutionResult == null) {
+            return false;
+        }
+        if (testExecutionResult.getStatus() == TestExecutionResult.Status.ABORTED) {
+            Throwable ex = testExecutionResult.getThrowable().get();
+            if (ex instanceof TestAbortedWithWarningException) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isSkipped() {
+        if (testExecutionResult == null) {
+            // skipped due to @Disabled or similar
+            return true;
+        }
+        if (testExecutionResult.getStatus() == TestExecutionResult.Status.ABORTED
+                && testExecutionResult.getThrowable().isPresent()) {
+            Throwable ex = testExecutionResult.getThrowable().get();
+            if (ex instanceof TestAbortedException && ex.getMessage().startsWith("Assumption failed")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
