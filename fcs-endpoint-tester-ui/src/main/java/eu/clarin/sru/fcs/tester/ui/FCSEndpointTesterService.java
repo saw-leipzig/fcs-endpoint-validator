@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.fcs.tester.FCSEndpointTester;
@@ -20,8 +21,11 @@ import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.tester.FCSTestResult;
 
 
+@Service
 public class FCSEndpointTesterService {
     protected static final Logger logger = LoggerFactory.getLogger(FCSEndpointTesterService.class);
+
+    protected static final FCSEndpointTesterService instance = new FCSEndpointTesterService();
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -36,6 +40,22 @@ public class FCSEndpointTesterService {
 
     // ----------------------------------------------------------------------
 
+    // @Async
+    public CompletableFuture<List<FCSTestResult>> evalute(FCSEndpointValidationRequest request) {
+        CompletableFuture<List<FCSTestResult>> completableFuture = new CompletableFuture<>();
+        
+        executor.submit(() -> {
+            try {
+                Map<String, FCSTestResult> results = FCSEndpointTester.runValidation(request);
+                completableFuture.complete(Collections.unmodifiableList(new ArrayList<>(results.values())));
+            } catch (IOException | SRUClientException e) {
+                logger.error("Error running validation", e);
+                completableFuture.obtrudeException(e);
+            }
+        });
+        
+        return completableFuture; 
+    }
 
     // ----------------------------------------------------------------------
 

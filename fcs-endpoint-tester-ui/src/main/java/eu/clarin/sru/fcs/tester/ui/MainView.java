@@ -4,6 +4,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+
+import org.apache.logging.log4j.core.LogEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
@@ -38,6 +43,8 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 import de.f0rce.ace.AceEditor;
 import de.f0rce.ace.enums.AceMode;
 import de.f0rce.ace.enums.AceTheme;
+import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
+import eu.clarin.sru.fcs.tester.FCSTestResult;
 
 @PageTitle("FCS SRU Endpoint Conformance Tester")
 @Route
@@ -45,6 +52,8 @@ import de.f0rce.ace.enums.AceTheme;
 @JsModule("./prefers-color-scheme.js")
 // @JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
 public class MainView extends VerticalLayout {
+
+    protected static final Logger logger = LoggerFactory.getLogger(MainView.class);
 
     public VerticalLayout mainContent;
     public TextField txtEndpointURL;
@@ -104,13 +113,26 @@ public class MainView extends VerticalLayout {
         btnStart.addClickListener(event -> {
             // input field validation should happen automatically
 
+            // build FCS Validation Request
+            FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
+            request.setBaseURI(txtEndpointURL.getValue().strip());
+            request.setUserSearchTerm(txtSearchTerm.getValue());
+
             final UI ui = UI.getCurrent();
 
+            final CompletableFuture<List<FCSTestResult>> result = FCSEndpointTesterService.getInstance()
+                    .evalute(request);
+            result.thenAccept((results) -> {
+                ui.access(() -> {
+                    // re-enable input for user
+                    setInputEnabled(true);
+
+                    mainContent = (VerticalLayout) createResultsContent(request, results);
+                    mainContentScroller.setContent(mainContent);
+                });
+            });
+
             setMainContentNoResults();
-
-            // mainContent = (VerticalLayout) createResultsContent();
-            // mainContentScroller.setContent(mainContent);
-
         });
 
         btnConfig.addClickListener(event -> {
@@ -120,6 +142,10 @@ public class MainView extends VerticalLayout {
     }
 
     // ----------------------------------------------------------------------
+
+    public void setInputEnabled(boolean enabled) {
+        btnStart.setEnabled(enabled);
+    }
 
     public void setMainContentNoResults() {
         mainContent.removeAll();
@@ -290,7 +316,7 @@ public class MainView extends VerticalLayout {
         return lytNoResults;
     }
 
-    public Component createResultsContent() {
+    public Component createResultsContent(FCSEndpointValidationRequest request, List<FCSTestResult> results) {
         VerticalLayout mainContent = new VerticalLayout();
         mainContent.addClassName(Gap.XSMALL);
         mainContent.setWidth("100%");
@@ -300,21 +326,22 @@ public class MainView extends VerticalLayout {
                 .set("margin-block", "0")
                 .set("paddding-block", "0");
 
-        mainContent.add(createResultsSummary());
-        mainContent.add(createResultsDetails());
+        mainContent.add(createResultsSummary(request, results));
+        mainContent.add(createResultsDetails(request, results));
 
         return mainContent;
     }
 
-    public List<Component> createResultsSummary() {
+    public List<Component> createResultsSummary(FCSEndpointValidationRequest request, List<FCSTestResult> results) {
         H2 txtResultsFor = new H2();
         txtResultsFor.add("Result for ");
-        txtResultsFor.add(new Anchor("https://fcs.data.saw-leipzig.de/dict", "https://fcs.data.saw-leipzig.de/dict"));
+        txtResultsFor.add(new Anchor(request.getBaseURI(), request.getBaseURI()));
         txtResultsFor.add(" (using test profile ");
-        txtResultsFor.add("CLARIN FCS 2.0");
+        txtResultsFor.add(request.getFCSTestProfile().toDisplayString());
         txtResultsFor.add("):");
         txtResultsFor.getStyle().set("font-size", "var(--lumo-font-size-l)");
 
+        // TODO ...
         Span txtTestResultSummary = new Span();
         Icon icoExlamation = VaadinIcon.EXCLAMATION.create();
         icoExlamation.setColor("var(--lumo-error-color)");
@@ -326,18 +353,18 @@ public class MainView extends VerticalLayout {
         Span txtTestResultCounts = new Span();
         // txtTestResultCounts.getStyle().set("margin", "0");
         txtTestResultCounts.add("Success: ");
-        txtTestResultCounts.add(Integer.toString(12));
+        txtTestResultCounts.add(Long.toString(results.stream().filter(r -> r.isSuccess()).count()));
         txtTestResultCounts.add(", Warnings: ");
-        txtTestResultCounts.add(Integer.toString(0));
+        txtTestResultCounts.add(Long.toString(results.stream().filter(r -> r.isWarning()).count()));
         txtTestResultCounts.add(", Errors: ");
-        txtTestResultCounts.add(Integer.toString(2));
+        txtTestResultCounts.add(Long.toString(results.stream().filter(r -> r.isFailure()).count()));
         txtTestResultCounts.add(", Skipped: ");
-        txtTestResultCounts.add(Integer.toString(1));
+        txtTestResultCounts.add(Long.toString(results.stream().filter(r -> r.isSkipped()).count()));
 
         return List.of(txtResultsFor, txtTestResultSummary, txtTestResultCounts);
     }
 
-    public List<Component> createResultsDetails() {
+    public List<Component> createResultsDetails(FCSEndpointValidationRequest request, List<FCSTestResult> results) {
         H2 txtResultsDetails = new H2("Results for individual test cases:");
         txtResultsDetails.getStyle()
                 .set("font-size", "var(--lumo-font-size-l)")
@@ -346,51 +373,55 @@ public class MainView extends VerticalLayout {
         Accordion accordionResultDetails = new Accordion();
         accordionResultDetails.close();
 
-        accordionResultDetails.add(createSingleResultDetails());
+        for (FCSTestResult result : results) {
+            accordionResultDetails.add(createSingleResultDetails(request, result));
+        }
 
         return List.of(txtResultsDetails, accordionResultDetails);
     }
 
-    public AccordionPanel createSingleResultDetails() {
+    public AccordionPanel createSingleResultDetails(FCSEndpointValidationRequest request, FCSTestResult result) {
         VerticalLayout resultDetail = new VerticalLayout();
         resultDetail.setSpacing(false);
         resultDetail.setPadding(false);
 
         Span expectedResult = new Span();
         expectedResult.add("Expected result: ");
-        expectedResult.add("No errors or diagnostics");
+        expectedResult.add(result.getExpected());
         resultDetail.add(expectedResult);
 
         Span actualResult = new Span();
         actualResult.add("Actual result: ");
-        Span actualResultValue = new Span("The test case was processed successfully");
+        Span actualResultValue = new Span(result.getMessage()); // TODO: if no error, show happy
         actualResultValue.getStyle().set("font-style", "italic");
         actualResult.add(actualResultValue);
         resultDetail.add(actualResult);
 
-        resultDetail.add(new Span("Debug messages:")); // h4
+        if (!result.getLogs().isEmpty()) {
+            resultDetail.add(new Span("Debug messages:")); // h4
 
-        Div resultDetailLogs = new Div();
-        resultDetailLogs.getStyle()
-                .setColor("var(--lumo-tertiary-text-color)");
-        resultDetailLogs.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
-                LumoUtility.AlignItems.START, LumoUtility.BoxSizing.BORDER, LumoUtility.FontSize.SMALL);
+            Div resultDetailLogs = new Div();
+            resultDetailLogs.getStyle().setColor("var(--lumo-tertiary-text-color)");
+            resultDetailLogs.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
+                    LumoUtility.AlignItems.START, LumoUtility.BoxSizing.BORDER, LumoUtility.FontSize.SMALL);
 
-        resultDetailLogs.add(new Span(
-                "[2024-02-13T23:51:38] performing SRU 1.2 explain request to endpoint \"https://fcs.data.saw-leipzig.de/dict\""));
-        resultDetailLogs.add(new Span("[2024-02-13T23:51:38] performing explain request"));
-        resultDetailLogs.add(new Span(
-                "[2024-02-13T23:51:38] submitting HTTP request: https://fcs.data.saw-leipzig.de/dict?operation=explain&version=1.2&x-fcs-endpoint-description=true"));
-        resultDetailLogs.add(new Span("[2024-02-13T23:51:38] parsing 'explain' response (mode = non-strict)"));
+            for (LogEvent log : result.getLogs()) {
+                resultDetailLogs.add(new Span(
+                        String.format("[%s] %s", log.getTimeMillis(), log.getMessage().getFormattedMessage())));
+            }
 
-        resultDetail.add(resultDetailLogs);
+            resultDetail.add(resultDetailLogs);
+        }
 
         AccordionPanel pnlResultDetail1 = new AccordionPanel();
         Span pnlResultDetailSummary = new Span(); // h3 ?
         Icon pnlResultDetailSummaryIcon = createIcon(VaadinIcon.CLOSE_SMALL, "Error");
         pnlResultDetailSummaryIcon.getElement().getThemeList().add("badge error");
         pnlResultDetailSummary.add(pnlResultDetailSummaryIcon);
-        pnlResultDetailSummary.add(" [CLARIN FCS 2.0] Explain: Regular explain request using default version");
+        pnlResultDetailSummary.add(" [");
+        pnlResultDetailSummary.add(request.getFCSTestProfile().toDisplayString());
+        pnlResultDetailSummary.add("] ???: ");
+        pnlResultDetailSummary.add(result.getName());
         pnlResultDetail1.setSummary(pnlResultDetailSummary);
         pnlResultDetail1.add(resultDetail);
 
