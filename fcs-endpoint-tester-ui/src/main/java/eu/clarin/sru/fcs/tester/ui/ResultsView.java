@@ -1,14 +1,22 @@
 package eu.clarin.sru.fcs.tester.ui;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.apache.http.HttpRequest;
+import org.apache.http.client.methods.HttpRequestWrapper;
 import org.apache.logging.log4j.core.LogEvent;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.accordion.AccordionPanel;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -17,9 +25,13 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 
+import de.f0rce.ace.AceEditor;
+import de.f0rce.ace.enums.AceMode;
+import de.f0rce.ace.enums.AceTheme;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationResponse;
 import eu.clarin.sru.fcs.tester.FCSTestResult;
+import eu.clarin.sru.fcs.tester.HttpRequestResponseInfo;
 
 public class ResultsView extends VerticalLayout {
 
@@ -117,7 +129,6 @@ public class ResultsView extends VerticalLayout {
         resultDetail.add(expectedResult);
 
         Span actualResult = new Span();
-        actualResult.addClassName(LumoUtility.Margin.Bottom.MEDIUM);
         Span actualResultLabel = new Span("Actual result: ");
         actualResultLabel.addClassName(LumoUtility.FontWeight.BOLD);
         actualResult.add(actualResultLabel);
@@ -129,8 +140,76 @@ public class ResultsView extends VerticalLayout {
 
         // details for HTTP stuff
 
+        if (!result.getHttpRequestResponseInfos().isEmpty()) {
+            H4 txtHTTPHeader = new H4("HTTP requests and responses:");
+            txtHTTPHeader.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.FontSize.SMALL);
+            resultDetail.add(txtHTTPHeader);
+
+            for (HttpRequestResponseInfo info : result.getHttpRequestResponseInfos()) {
+                HttpRequest temp = info.getRequest();
+                while (temp instanceof HttpRequestWrapper) {
+                    temp = ((HttpRequestWrapper) temp).getOriginal();
+                }
+                final HttpRequest original = temp;
+
+                Button btnViewHttp = new Button("View");
+                btnViewHttp.setPrefixComponent(VaadinIcon.FILE_CODE.create());
+                btnViewHttp.addThemeVariants(ButtonVariant.LUMO_SMALL);
+
+                Span httpInfo = new Span();
+                httpInfo.add(btnViewHttp);
+                httpInfo.add(String.format(" [%s]: %s %s", info.getResponse().getStatusLine().getStatusCode(),
+                        original.getRequestLine().getMethod(), original.getRequestLine().getUri()));
+                resultDetail.add(httpInfo);
+
+                btnViewHttp.addClickListener(event -> {
+                    Dialog viewCodeDialog = new Dialog();
+                    viewCodeDialog.setHeaderTitle("HTTP Request/Response Details");
+                    viewCodeDialog.setMinWidth(80, Unit.VW);
+
+                    Button closeButton = new Button(new Icon("lumo", "cross"), (e) -> viewCodeDialog.close());
+                    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                    viewCodeDialog.getHeader().add(closeButton);
+
+                    VerticalLayout layoutViewCodeMeta = new VerticalLayout();
+                    layoutViewCodeMeta.getThemeList().clear();
+
+                    H3 txtHeaderRequest = new H3("Request");
+                    txtHeaderRequest.addClassName(LumoUtility.FontSize.LARGE);
+                    layoutViewCodeMeta.add(txtHeaderRequest);
+                    Span url = new Span("Url: ");
+                    url.add(new Anchor(original.getRequestLine().getUri(), original.getRequestLine().getUri()));
+                    layoutViewCodeMeta.add(url);
+                    layoutViewCodeMeta
+                            .add(new Span(String.format("Headers: %s", Arrays.toString(original.getAllHeaders()))));
+
+                    H3 txtHeaderResponse = new H3("Response");
+                    txtHeaderResponse.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.Top.MEDIUM);
+                    layoutViewCodeMeta.add(txtHeaderResponse);
+                    layoutViewCodeMeta
+                            .add(new Span(String.format("Status: %s", info.getResponse().getStatusLine().toString())));
+                    layoutViewCodeMeta.add(new Span(
+                            String.format("Headers: %s", Arrays.toString(info.getResponse().getAllHeaders()))));
+
+                    viewCodeDialog.add(layoutViewCodeMeta);
+
+                    AceEditor ace = new AceEditor();
+                    ace.setTheme(AceTheme.github);
+                    ace.setMode(AceMode.xml);
+                    ace.setReadOnly(true);
+                    ace.setWrap(true);
+                    ace.setValue(new String(info.getResponseBytes()));
+                    ace.addClassName(LumoUtility.Margin.Top.MEDIUM);
+                    viewCodeDialog.add(ace);
+
+                    viewCodeDialog.open();
+                });
+            }
+        }
+
         if (!result.getLogs().isEmpty()) {
             H4 txtLogHeader = new H4("Debug messages:");
+            txtLogHeader.addClassName(LumoUtility.Margin.Top.MEDIUM);
             txtLogHeader.addClassName(LumoUtility.FontSize.SMALL);
             resultDetail.add(txtLogHeader);
 
