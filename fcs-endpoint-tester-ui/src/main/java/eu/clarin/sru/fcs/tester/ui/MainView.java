@@ -60,10 +60,8 @@ public class MainView extends VerticalLayout {
         // --------------------------------------------------------
         // main content
 
-        // mainContent.add(createNoResultsPlaceholder());
-
-        mainContent = (VerticalLayout) createResultsContent();
-        mainContentScroller.setContent(mainContent);
+        mainContent.removeAll();
+        mainContent.add(createNoResultsPlaceholder());
 
         // --------------------------------------------------------
         // compose all
@@ -79,6 +77,16 @@ public class MainView extends VerticalLayout {
         add(createUserInputArea());
         add(mainContentScroller);
         add(createFooter());
+
+        btnStart.addClickListener(event -> {
+            mainContent = (VerticalLayout) createResultsContent();
+            mainContentScroller.setContent(mainContent);
+        });
+        btnConfig.addClickListener(event -> {
+            mainContent.removeAll();
+            mainContent.add(createNoResultsPlaceholder());
+            btnStart.setEnabled(true);
+        });
 
         // Button button = new Button("Click me",
         // event -> add(new Paragraph("Clicked!")));
