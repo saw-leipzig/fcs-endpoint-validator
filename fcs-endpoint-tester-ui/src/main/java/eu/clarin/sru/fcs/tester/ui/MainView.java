@@ -15,6 +15,7 @@ import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
@@ -28,13 +29,19 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
+
+import de.f0rce.ace.AceEditor;
+import de.f0rce.ace.enums.AceMode;
+import de.f0rce.ace.enums.AceTheme;
 
 @PageTitle("FCS SRU Endpoint Conformance Tester")
 @Route
 @Uses(Icon.class)
 @JsModule("./prefers-color-scheme.js")
+// @JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
 public class MainView extends VerticalLayout {
 
     public VerticalLayout mainContent;
@@ -65,6 +72,14 @@ public class MainView extends VerticalLayout {
 
         mainContent.removeAll();
         mainContent.add(createNoResultsPlaceholder());
+
+        // demo for later http response inspection
+        AceEditor ace = new AceEditor();
+        ace.setTheme(AceTheme.github);
+        ace.setMode(AceMode.xml);
+        ace.setReadOnly(true);
+        ace.setValue("<?xml version='1.0' encoding='utf-8'?>\n...");
+        mainContent.add(ace);
 
         // --------------------------------------------------------
         // compose all
@@ -133,6 +148,8 @@ public class MainView extends VerticalLayout {
         linkEmail.setHref("mailto:fcs@clarin.eu");
         txtFooter.setWidth("max-content");
         txtFooter.add(linkEmail);
+
+        txtFooter.add(".");
 
         footerRow.add(txtFooter);
 
@@ -271,7 +288,7 @@ public class MainView extends VerticalLayout {
     public List<Component> createResultsSummary() {
         H2 txtResultsFor = new H2();
         txtResultsFor.add("Result for ");
-        txtResultsFor.add("https://fcs.data.saw-leipzig.de/dict");
+        txtResultsFor.add(new Anchor("https://fcs.data.saw-leipzig.de/dict", "https://fcs.data.saw-leipzig.de/dict"));
         txtResultsFor.add(" (using test profile ");
         txtResultsFor.add("CLARIN FCS 2.0");
         txtResultsFor.add("):");
@@ -314,37 +331,47 @@ public class MainView extends VerticalLayout {
     }
 
     public AccordionPanel createSingleResultDetails() {
-        VerticalLayout resultDetail1 = new VerticalLayout();
-        resultDetail1.setSpacing(false);
-        resultDetail1.setPadding(false);
+        VerticalLayout resultDetail = new VerticalLayout();
+        resultDetail.setSpacing(false);
+        resultDetail.setPadding(false);
 
-        Span expectedResult1 = new Span();
-        expectedResult1.add("Expected result: ");
-        expectedResult1.add("No errors or diagnostics");
-        resultDetail1.add(expectedResult1);
+        Span expectedResult = new Span();
+        expectedResult.add("Expected result: ");
+        expectedResult.add("No errors or diagnostics");
+        resultDetail.add(expectedResult);
 
-        Span actualResult1 = new Span();
-        actualResult1.add("Actual result: ");
-        actualResult1.add("The test case was processed successfully");
-        resultDetail1.add(actualResult1);
+        Span actualResult = new Span();
+        actualResult.add("Actual result: ");
+        Span actualResultValue = new Span("The test case was processed successfully");
+        actualResultValue.getStyle().set("font-style", "italic");
+        actualResult.add(actualResultValue);
+        resultDetail.add(actualResult);
 
-        resultDetail1.add(new Span("Debug messages:")); // h4
+        resultDetail.add(new Span("Debug messages:")); // h4
 
-        resultDetail1.add(new Span(
+        Div resultDetailLogs = new Div();
+        resultDetailLogs.getStyle()
+                .setColor("var(--lumo-tertiary-text-color)");
+        resultDetailLogs.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.AlignItems.START, LumoUtility.BoxSizing.BORDER, LumoUtility.FontSize.SMALL);
+
+        resultDetailLogs.add(new Span(
                 "[2024-02-13T23:51:38] performing SRU 1.2 explain request to endpoint \"https://fcs.data.saw-leipzig.de/dict\""));
-        resultDetail1.add(new Span("[2024-02-13T23:51:38] performing explain request"));
-        resultDetail1.add(new Span(
+        resultDetailLogs.add(new Span("[2024-02-13T23:51:38] performing explain request"));
+        resultDetailLogs.add(new Span(
                 "[2024-02-13T23:51:38] submitting HTTP request: https://fcs.data.saw-leipzig.de/dict?operation=explain&version=1.2&x-fcs-endpoint-description=true"));
-        resultDetail1.add(new Span("[2024-02-13T23:51:38] parsing 'explain' response (mode = non-strict)"));
+        resultDetailLogs.add(new Span("[2024-02-13T23:51:38] parsing 'explain' response (mode = non-strict)"));
+
+        resultDetail.add(resultDetailLogs);
 
         AccordionPanel pnlResultDetail1 = new AccordionPanel();
-        Span pnlResultDetailSummary1 = new Span(); // h3 ?
-        Icon pnlResultDetailSummaryIcon1 = createIcon(VaadinIcon.CLOSE_SMALL, "Error");
-        pnlResultDetailSummaryIcon1.getElement().getThemeList().add("badge error");
-        pnlResultDetailSummary1.add(pnlResultDetailSummaryIcon1);
-        pnlResultDetailSummary1.add(" [CLARIN FCS 2.0] Explain: Regular explain request using default version");
-        pnlResultDetail1.setSummary(pnlResultDetailSummary1);
-        pnlResultDetail1.add(resultDetail1);
+        Span pnlResultDetailSummary = new Span(); // h3 ?
+        Icon pnlResultDetailSummaryIcon = createIcon(VaadinIcon.CLOSE_SMALL, "Error");
+        pnlResultDetailSummaryIcon.getElement().getThemeList().add("badge error");
+        pnlResultDetailSummary.add(pnlResultDetailSummaryIcon);
+        pnlResultDetailSummary.add(" [CLARIN FCS 2.0] Explain: Regular explain request using default version");
+        pnlResultDetail1.setSummary(pnlResultDetailSummary);
+        pnlResultDetail1.add(resultDetail);
 
         return pnlResultDetail1;
     }
