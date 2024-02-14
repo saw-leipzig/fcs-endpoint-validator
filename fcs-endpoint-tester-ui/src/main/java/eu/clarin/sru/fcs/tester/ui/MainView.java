@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Objects;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
@@ -49,6 +51,8 @@ public class MainView extends VerticalLayout {
     public TextField txtSearchTerm;
     public Button btnStart;
     public Button btnConfig;
+
+    // ----------------------------------------------------------------------
 
     public MainView() {
 
@@ -96,16 +100,33 @@ public class MainView extends VerticalLayout {
         add(mainContentScroller);
         add(createFooter());
 
+        btnStart.addClickShortcut(Key.ENTER);
         btnStart.addClickListener(event -> {
-            mainContent = (VerticalLayout) createResultsContent();
-            mainContentScroller.setContent(mainContent);
+            // input field validation should happen automatically
+
+            final UI ui = UI.getCurrent();
+
+            setMainContentNoResults();
+
+            // mainContent = (VerticalLayout) createResultsContent();
+            // mainContentScroller.setContent(mainContent);
+
         });
+
         btnConfig.addClickListener(event -> {
-            mainContent.removeAll();
-            mainContent.add(createNoResultsPlaceholder());
+            setMainContentNoResults();
             btnStart.setEnabled(true);
         });
     }
+
+    // ----------------------------------------------------------------------
+
+    public void setMainContentNoResults() {
+        mainContent.removeAll();
+        mainContent.add(createNoResultsPlaceholder());
+    }
+
+    // ----------------------------------------------------------------------
 
     public Component createHeader() {
         HorizontalLayout titleRow = new HorizontalLayout();
@@ -376,6 +397,8 @@ public class MainView extends VerticalLayout {
         return pnlResultDetail1;
     }
 
+    // ----------------------------------------------------------------------
+
     // https://vaadin.com/docs/latest/components/badge
     private Icon createIcon(VaadinIcon vaadinIcon, String label) {
         Icon icon = vaadinIcon.create();
@@ -386,4 +409,5 @@ public class MainView extends VerticalLayout {
         icon.getElement().setAttribute("title", label);
         return icon;
     }
+
 }

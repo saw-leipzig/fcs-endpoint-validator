@@ -2,11 +2,9 @@
 
 This project can be used as a starting point to create your own Vaadin application.
 It has the necessary dependencies and files to help you get started.
-It requires Java 8 or newer and node.js 10.16 or newer.
+It requires Java 17 or newer and node.js 10.16 or newer.
 
-To run the project, run `mvn jetty:run` and open [http://localhost:8080](http://localhost:8080) in browser.
-
---> `mvn jetty:run -Dvaadin.devmode.hostsAllowed="127.0.0.1,localhost,*"` for dev tools
+To run the project, run `mvn spring-boot:run` and open [http://localhost:8080](http://localhost:8080) in browser.
 
 To update to the latest available Vaadin release, issue `mvn 
 versions:update-properties`
