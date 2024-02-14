@@ -25,6 +25,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.PreserveOnRefresh;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
@@ -35,6 +36,7 @@ import eu.clarin.sru.fcs.tester.FCSEndpointValidationResponse;
 
 @PageTitle("FCS SRU Endpoint Conformance Tester")
 @Route
+@PreserveOnRefresh
 @Uses(Icon.class)
 @JsModule("./prefers-color-scheme.js")
 // @JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")

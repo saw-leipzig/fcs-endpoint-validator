@@ -162,48 +162,7 @@ public class ResultsView extends VerticalLayout {
                         original.getRequestLine().getMethod(), original.getRequestLine().getUri()));
                 resultDetail.add(httpInfo);
 
-                btnViewHttp.addClickListener(event -> {
-                    Dialog viewCodeDialog = new Dialog();
-                    viewCodeDialog.setHeaderTitle("HTTP Request/Response Details");
-                    viewCodeDialog.setMinWidth(80, Unit.VW);
-
-                    Button closeButton = new Button(new Icon("lumo", "cross"), (e) -> viewCodeDialog.close());
-                    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-                    viewCodeDialog.getHeader().add(closeButton);
-
-                    VerticalLayout layoutViewCodeMeta = new VerticalLayout();
-                    layoutViewCodeMeta.getThemeList().clear();
-
-                    H3 txtHeaderRequest = new H3("Request");
-                    txtHeaderRequest.addClassName(LumoUtility.FontSize.LARGE);
-                    layoutViewCodeMeta.add(txtHeaderRequest);
-                    Span url = new Span("Url: ");
-                    url.add(new Anchor(original.getRequestLine().getUri(), original.getRequestLine().getUri()));
-                    layoutViewCodeMeta.add(url);
-                    layoutViewCodeMeta
-                            .add(new Span(String.format("Headers: %s", Arrays.toString(original.getAllHeaders()))));
-
-                    H3 txtHeaderResponse = new H3("Response");
-                    txtHeaderResponse.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.Top.MEDIUM);
-                    layoutViewCodeMeta.add(txtHeaderResponse);
-                    layoutViewCodeMeta
-                            .add(new Span(String.format("Status: %s", info.getResponse().getStatusLine().toString())));
-                    layoutViewCodeMeta.add(new Span(
-                            String.format("Headers: %s", Arrays.toString(info.getResponse().getAllHeaders()))));
-
-                    viewCodeDialog.add(layoutViewCodeMeta);
-
-                    AceEditor ace = new AceEditor();
-                    ace.setTheme(AceTheme.github);
-                    ace.setMode(AceMode.xml);
-                    ace.setReadOnly(true);
-                    ace.setWrap(true);
-                    ace.setValue(new String(info.getResponseBytes()));
-                    ace.addClassName(LumoUtility.Margin.Top.MEDIUM);
-                    viewCodeDialog.add(ace);
-
-                    viewCodeDialog.open();
-                });
+                btnViewHttp.addClickListener(event -> showHttpInfoDialog(info));
             }
         }
 
@@ -240,6 +199,56 @@ public class ResultsView extends VerticalLayout {
         pnlResultDetail.add(resultDetail);
 
         return pnlResultDetail;
+    }
+
+    private Dialog showHttpInfoDialog(HttpRequestResponseInfo info) {
+        HttpRequest original = info.getRequest();
+        while (original instanceof HttpRequestWrapper) {
+            original = ((HttpRequestWrapper) original).getOriginal();
+        }
+
+        Dialog viewCodeDialog = new Dialog();
+        viewCodeDialog.setHeaderTitle("HTTP Request/Response Details");
+        viewCodeDialog.setMinWidth(80, Unit.VW);
+
+        Button closeButton = new Button(new Icon("lumo", "cross"), (e) -> viewCodeDialog.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        viewCodeDialog.getHeader().add(closeButton);
+
+        VerticalLayout layoutViewCodeMeta = new VerticalLayout();
+        layoutViewCodeMeta.getThemeList().clear();
+
+        H3 txtHeaderRequest = new H3("Request");
+        txtHeaderRequest.addClassName(LumoUtility.FontSize.LARGE);
+        layoutViewCodeMeta.add(txtHeaderRequest);
+        Span url = new Span("URL: ");
+        url.add(new Anchor(original.getRequestLine().getUri(), original.getRequestLine().getUri()));
+        layoutViewCodeMeta.add(url);
+        if (original.getAllHeaders().length > 0) {
+            layoutViewCodeMeta.add(new Span(String.format("Headers: %s", Arrays.toString(original.getAllHeaders()))));
+        }
+
+        H3 txtHeaderResponse = new H3("Response");
+        txtHeaderResponse.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.Top.MEDIUM);
+        layoutViewCodeMeta.add(txtHeaderResponse);
+        layoutViewCodeMeta.add(new Span(String.format("Status: %s", info.getResponse().getStatusLine().toString())));
+        layoutViewCodeMeta
+                .add(new Span(String.format("Headers: %s", Arrays.toString(info.getResponse().getAllHeaders()))));
+
+        viewCodeDialog.add(layoutViewCodeMeta);
+
+        AceEditor ace = new AceEditor();
+        ace.setTheme(AceTheme.github);
+        ace.setMode(AceMode.xml);
+        ace.setReadOnly(true);
+        ace.setWrap(true);
+        ace.setValue(new String(info.getResponseBytes()));
+        ace.addClassName(LumoUtility.Margin.Top.MEDIUM);
+        viewCodeDialog.add(ace);
+
+        viewCodeDialog.open();
+
+        return viewCodeDialog;
     }
 
     // ----------------------------------------------------------------------
