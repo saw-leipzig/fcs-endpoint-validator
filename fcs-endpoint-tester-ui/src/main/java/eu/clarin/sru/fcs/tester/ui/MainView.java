@@ -1,9 +1,13 @@
 package eu.clarin.sru.fcs.tester.ui;
 
+import java.util.List;
+
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.accordion.Accordion;
+import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
@@ -14,8 +18,6 @@ import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.Scroller.ScrollDirection;
@@ -29,25 +31,24 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 @PageTitle("FCS SRU Endpoint Conformance Tester")
 @Route
 @Uses(Icon.class)
-public class MainView extends Composite<VerticalLayout> {
+@JsModule("./prefers-color-scheme.js")
+public class MainView extends VerticalLayout {
 
     public VerticalLayout mainContent;
+    public TextField txtEndpointURL;
+    public TextField txtSearchTerm;
+    public Button btnStart;
+    public Button btnConfig;
 
     public MainView() {
-        // header row (input fields)
-        HorizontalLayout headerRow = new HorizontalLayout();
-        headerRow.setSpacing(false);
-        headerRow.addClassName(Gap.XSMALL);
-        headerRow.setWidth("100%");
-        headerRow.setHeight("min-content");
-        headerRow.setJustifyContentMode(JustifyContentMode.CENTER);
-        headerRow.setAlignItems(Alignment.CENTER);
 
         // main content area (scrollable)
         Scroller mainContentScroller = new Scroller();
         mainContentScroller.setWidth("100%");
         mainContentScroller.setHeight("100%");
-        mainContentScroller.getStyle().set("flex-grow", "1");
+        mainContentScroller.getStyle()
+                .set("flex-grow", "1")
+                .set("padding-block", "0");
         mainContentScroller.setScrollDirection(ScrollDirection.VERTICAL);
         mainContent = new VerticalLayout();
         mainContent.addClassName(Gap.XSMALL);
@@ -57,139 +58,32 @@ public class MainView extends Composite<VerticalLayout> {
         mainContentScroller.setContent(mainContent);
 
         // --------------------------------------------------------
-        // input text fiels
-
-        FormLayout flInputs = new FormLayout();
-        flInputs.addClassName(Gap.XSMALL);
-        flInputs.addClassName(Padding.XSMALL);
-        flInputs.setWidth("100%");
-        flInputs.setResponsiveSteps(new ResponsiveStep("0", 1));
-        flInputs.getStyle().set("--vaadin-form-item-label-width", "10em");
-
-        TextField txtEndpointURL = new TextField();
-        txtEndpointURL.setWidth("100%");
-        txtEndpointURL.addThemeName("label-left");
-        txtEndpointURL.setClearButtonVisible(true);
-        txtEndpointURL.setRequiredIndicatorVisible(true);
-        txtEndpointURL.setPrefixComponent(VaadinIcon.LINK.create());
-        flInputs.addFormItem(txtEndpointURL, "Endpoint BaseURL");
-
-        TextField txtSearchTerm = new TextField();
-        txtSearchTerm.setWidth("100%");
-        txtSearchTerm.addThemeName("label-left");
-        txtSearchTerm.setClearButtonVisible(true);
-        txtSearchTerm.setRequiredIndicatorVisible(true);
-        txtSearchTerm.setPrefixComponent(VaadinIcon.SEARCH.create());
-        flInputs.addFormItem(txtSearchTerm, "Search Term");
-
-        headerRow.add(flInputs);
-
-        // --------------------------------------------------------
-        // input buttons
-
-        VerticalLayout vlButtons = new VerticalLayout();
-        vlButtons.addClassName(Gap.XSMALL);
-        vlButtons.addClassName(Padding.SMALL);
-        vlButtons.setWidth("min-content");
-        vlButtons.setHeight("min-content");
-        vlButtons.setJustifyContentMode(JustifyContentMode.START);
-        vlButtons.setAlignItems(Alignment.CENTER);
-
-        Button btnStart = new Button();
-        btnStart.setText("Evaluate");
-        btnStart.setWidth("min-content");
-        btnStart.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        btnStart.setIcon(VaadinIcon.DOCTOR.create());
-        btnStart.setDisableOnClick(true);
-        vlButtons.add(btnStart);
-
-        Button btnConfig = new Button();
-        btnConfig.setText("Configure");
-        btnConfig.setWidth("min-content");
-        btnConfig.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
-        btnConfig.setIcon(VaadinIcon.TOOLS.create());
-        vlButtons.add(btnConfig);
-
-        headerRow.add(vlButtons);
-
-        // --------------------------------------------------------
         // main content
 
         // mainContent.add(createNoResultsPlaceholder());
 
-        H2 txtResultsFor = new H2();
-        txtResultsFor.add("Result for ");
-        txtResultsFor.add("https://fcs.data.saw-leipzig.de/dict");
-        txtResultsFor.add(" (using test profile ");
-        txtResultsFor.add("CLARIN FCS 2.0");
-        txtResultsFor.add("):");
-        txtResultsFor.getStyle().set("font-size", "var(--lumo-font-size-l)");
-        mainContent.add(txtResultsFor);
-
-        Span txtTestResultSummary = new Span();
-        Icon icoExlamation = VaadinIcon.EXCLAMATION.create();
-        icoExlamation.setColor("var(--lumo-error-color)");
-        icoExlamation.setSize("var(--lumo-icon-size-s)");
-        txtTestResultSummary.add(icoExlamation);
-        txtTestResultSummary.add("The endpoint fails to pass in 2 tests.");
-        // txtTestResultSummary.getStyle().set("margin", "0");
-        mainContent.add(txtTestResultSummary);
-
-        Span txtTestResultCounts = new Span();
-        // txtTestResultCounts.getStyle().set("margin", "0");
-        txtTestResultCounts.add("Success: ");
-        txtTestResultCounts.add(Integer.toString(12));
-        txtTestResultCounts.add(", Warnings: ");
-        txtTestResultCounts.add(Integer.toString(0));
-        txtTestResultCounts.add(", Errors: ");
-        txtTestResultCounts.add(Integer.toString(2));
-        txtTestResultCounts.add(", Skipped: ");
-        txtTestResultCounts.add(Integer.toString(1));
-        mainContent.add(txtTestResultCounts);
-
-        H2 txtResultsDetails = new H2("Results for individual test cases:");
-        txtResultsDetails.getStyle().set("font-size", "var(--lumo-font-size-l)");
-        mainContent.add(txtResultsDetails);
+        mainContent = (VerticalLayout) createResultsContent();
+        mainContentScroller.setContent(mainContent);
 
         // --------------------------------------------------------
         // compose all
 
-        getContent().setWidth("100%");
-        getContent().getStyle().set("flex-grow", "1");
-        getContent().getStyle().set("padding-bottom", "0");
-        getContent().setHeight("100%");
-        // getContent().setSpacing(false);
-        // getContent().setPadding(false);
+        setWidth("100%");
+        setHeight("100%");
+        // setSpacing(false);
+        // setPadding(false);
+        getStyle().set("flex-grow", "1");
+        getStyle().set("padding-bottom", "0");
 
-        getContent().add(createHeader());
-        getContent().add(headerRow);
-        getContent().add(mainContentScroller);
-        getContent().add(createFooter());
+        add(createHeader());
+        add(createUserInputArea());
+        add(mainContentScroller);
+        add(createFooter());
 
         // Button button = new Button("Click me",
         // event -> add(new Paragraph("Clicked!")));
 
         // add(button);
-    }
-
-    public Component createNoResultsPlaceholder() {
-        VerticalLayout lytNoResults = new VerticalLayout();
-        lytNoResults.setWidth("100%");
-        lytNoResults.setHeight("100%");
-        lytNoResults.getStyle().set("flex-grow", "1");
-        lytNoResults.setJustifyContentMode(JustifyContentMode.CENTER);
-        lytNoResults.setAlignItems(Alignment.CENTER);
-
-        Paragraph txtNoResults = new Paragraph();
-        txtNoResults.setText("No results available.");
-        txtNoResults.getStyle()
-                .set("font-size", "var(--lumo-font-size-xl)")
-                .set("font-weight", "bold")
-                .set("color", "var(--lumo-secondary-text-color)");
-
-        lytNoResults.add(txtNoResults);
-
-        return lytNoResults;
     }
 
     public Component createHeader() {
@@ -223,7 +117,7 @@ public class MainView extends Composite<VerticalLayout> {
         footerRow.setAlignItems(Alignment.CENTER);
 
         Paragraph txtFooter = new Paragraph();
-        txtFooter.setText("For questions of bug reports please contact ");
+        txtFooter.setText("For questions or bug reports please contact ");
         txtFooter.setWidth("100%");
         txtFooter.setWidth("max-content");
         txtFooter.getStyle().set("font-size", "var(--lumo-font-size-s)");
@@ -239,4 +133,200 @@ public class MainView extends Composite<VerticalLayout> {
         return footerRow;
     }
 
+    public Component createInputFields() {
+        FormLayout flInputs = new FormLayout();
+        flInputs.addClassName(Gap.XSMALL);
+        flInputs.addClassName(Padding.XSMALL);
+        flInputs.setWidth("100%");
+        flInputs.setResponsiveSteps(new ResponsiveStep("0", 1));
+        flInputs.getStyle().set("--vaadin-form-item-label-width", "10em");
+
+        txtEndpointURL = new TextField();
+        txtEndpointURL.setWidth("100%");
+        txtEndpointURL.addThemeName("label-left");
+        txtEndpointURL.setClearButtonVisible(true);
+        txtEndpointURL.setRequiredIndicatorVisible(true);
+        txtEndpointURL.setPrefixComponent(VaadinIcon.LINK.create());
+        flInputs.addFormItem(txtEndpointURL, "Endpoint BaseURL");
+
+        txtSearchTerm = new TextField();
+        txtSearchTerm.setWidth("100%");
+        txtSearchTerm.addThemeName("label-left");
+        txtSearchTerm.setClearButtonVisible(true);
+        txtSearchTerm.setRequiredIndicatorVisible(true);
+        txtSearchTerm.setPrefixComponent(VaadinIcon.SEARCH.create());
+        flInputs.addFormItem(txtSearchTerm, "Search Term");
+
+        return flInputs;
+    }
+
+    public Component createActionButtons() {
+        VerticalLayout vlButtons = new VerticalLayout();
+        vlButtons.addClassName(Gap.XSMALL);
+        vlButtons.addClassName(Padding.SMALL);
+        vlButtons.setWidth("min-content");
+        vlButtons.setHeight("min-content");
+        vlButtons.setJustifyContentMode(JustifyContentMode.START);
+        vlButtons.setAlignItems(Alignment.CENTER);
+
+        btnStart = new Button();
+        btnStart.setText("Evaluate");
+        btnStart.setWidth("min-content");
+        btnStart.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnStart.setIcon(VaadinIcon.DOCTOR.create());
+        btnStart.setDisableOnClick(true);
+        vlButtons.add(btnStart);
+
+        btnConfig = new Button();
+        btnConfig.setText("Configure");
+        btnConfig.setWidth("min-content");
+        btnConfig.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+        btnConfig.setIcon(VaadinIcon.TOOLS.create());
+        vlButtons.add(btnConfig);
+
+        return vlButtons;
+    }
+
+    public Component createUserInputArea() {
+        HorizontalLayout headerRow = new HorizontalLayout();
+        headerRow.setSpacing(false);
+        headerRow.addClassName(Gap.XSMALL);
+        headerRow.setWidth("100%");
+        headerRow.setHeight("min-content");
+        headerRow.setJustifyContentMode(JustifyContentMode.CENTER);
+        headerRow.setAlignItems(Alignment.CENTER);
+
+        headerRow.add(createInputFields());
+        headerRow.add(createActionButtons());
+
+        return headerRow;
+    }
+
+    public Component createNoResultsPlaceholder() {
+        VerticalLayout lytNoResults = new VerticalLayout();
+        lytNoResults.setWidth("100%");
+        lytNoResults.setHeight("100%");
+        lytNoResults.getStyle().set("flex-grow", "1");
+        lytNoResults.setJustifyContentMode(JustifyContentMode.CENTER);
+        lytNoResults.setAlignItems(Alignment.CENTER);
+
+        Paragraph txtNoResults = new Paragraph();
+        txtNoResults.setText("No results available.");
+        txtNoResults.getStyle()
+                .set("font-size", "var(--lumo-font-size-xl)")
+                .set("font-weight", "bold")
+                .set("color", "var(--lumo-secondary-text-color)");
+
+        lytNoResults.add(txtNoResults);
+
+        return lytNoResults;
+    }
+
+    public Component createResultsContent() {
+        VerticalLayout mainContent = new VerticalLayout();
+        mainContent.addClassName(Gap.XSMALL);
+        mainContent.setWidth("100%");
+        mainContent.setHeight("100%");
+        mainContent.getStyle()
+                .set("flex-grow", "1")
+                .set("margin-block", "0")
+                .set("paddding-block", "0");
+
+        mainContent.add(createResultsSummary());
+        mainContent.add(createResultsDetails());
+
+        return mainContent;
+    }
+
+    public List<Component> createResultsSummary() {
+        H2 txtResultsFor = new H2();
+        txtResultsFor.add("Result for ");
+        txtResultsFor.add("https://fcs.data.saw-leipzig.de/dict");
+        txtResultsFor.add(" (using test profile ");
+        txtResultsFor.add("CLARIN FCS 2.0");
+        txtResultsFor.add("):");
+        txtResultsFor.getStyle().set("font-size", "var(--lumo-font-size-l)");
+
+        Span txtTestResultSummary = new Span();
+        Icon icoExlamation = VaadinIcon.EXCLAMATION.create();
+        icoExlamation.setColor("var(--lumo-error-color)");
+        icoExlamation.setSize("var(--lumo-icon-size-s)");
+        txtTestResultSummary.add(icoExlamation);
+        txtTestResultSummary.add("The endpoint fails to pass in 2 tests.");
+        // txtTestResultSummary.getStyle().set("margin", "0");
+
+        Span txtTestResultCounts = new Span();
+        // txtTestResultCounts.getStyle().set("margin", "0");
+        txtTestResultCounts.add("Success: ");
+        txtTestResultCounts.add(Integer.toString(12));
+        txtTestResultCounts.add(", Warnings: ");
+        txtTestResultCounts.add(Integer.toString(0));
+        txtTestResultCounts.add(", Errors: ");
+        txtTestResultCounts.add(Integer.toString(2));
+        txtTestResultCounts.add(", Skipped: ");
+        txtTestResultCounts.add(Integer.toString(1));
+
+        return List.of(txtResultsFor, txtTestResultSummary, txtTestResultCounts);
+    }
+
+    public List<Component> createResultsDetails() {
+        H2 txtResultsDetails = new H2("Results for individual test cases:");
+        txtResultsDetails.getStyle()
+                .set("font-size", "var(--lumo-font-size-l)")
+                .set("margin-block-start", "1ex");
+
+        Accordion accordionResultDetails = new Accordion();
+        accordionResultDetails.close();
+
+        accordionResultDetails.add(createSingleResultDetails());
+
+        return List.of(txtResultsDetails, accordionResultDetails);
+    }
+
+    public AccordionPanel createSingleResultDetails() {
+        VerticalLayout resultDetail1 = new VerticalLayout();
+        resultDetail1.setSpacing(false);
+        resultDetail1.setPadding(false);
+
+        Span expectedResult1 = new Span();
+        expectedResult1.add("Expected result: ");
+        expectedResult1.add("No errors or diagnostics");
+        resultDetail1.add(expectedResult1);
+
+        Span actualResult1 = new Span();
+        actualResult1.add("Actual result: ");
+        actualResult1.add("The test case was processed successfully");
+        resultDetail1.add(actualResult1);
+
+        resultDetail1.add(new Span("Debug messages:")); // h4
+
+        resultDetail1.add(new Span(
+                "[2024-02-13T23:51:38] performing SRU 1.2 explain request to endpoint \"https://fcs.data.saw-leipzig.de/dict\""));
+        resultDetail1.add(new Span("[2024-02-13T23:51:38] performing explain request"));
+        resultDetail1.add(new Span(
+                "[2024-02-13T23:51:38] submitting HTTP request: https://fcs.data.saw-leipzig.de/dict?operation=explain&version=1.2&x-fcs-endpoint-description=true"));
+        resultDetail1.add(new Span("[2024-02-13T23:51:38] parsing 'explain' response (mode = non-strict)"));
+
+        AccordionPanel pnlResultDetail1 = new AccordionPanel();
+        Span pnlResultDetailSummary1 = new Span(); // h3 ?
+        Icon pnlResultDetailSummaryIcon1 = createIcon(VaadinIcon.CLOSE_SMALL, "Error");
+        pnlResultDetailSummaryIcon1.getElement().getThemeList().add("badge error");
+        pnlResultDetailSummary1.add(pnlResultDetailSummaryIcon1);
+        pnlResultDetailSummary1.add(" [CLARIN FCS 2.0] Explain: Regular explain request using default version");
+        pnlResultDetail1.setSummary(pnlResultDetailSummary1);
+        pnlResultDetail1.add(resultDetail1);
+
+        return pnlResultDetail1;
+    }
+
+    // https://vaadin.com/docs/latest/components/badge
+    private Icon createIcon(VaadinIcon vaadinIcon, String label) {
+        Icon icon = vaadinIcon.create();
+        icon.getStyle().set("padding", "var(--lumo-space-xs");
+        // Accessible label
+        icon.getElement().setAttribute("aria-label", label);
+        // Tooltip
+        icon.getElement().setAttribute("title", label);
+        return icon;
+    }
 }
