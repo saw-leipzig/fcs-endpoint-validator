@@ -5,9 +5,11 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.logging.log4j.core.LogEvent;
 import org.junit.platform.engine.TestDescriptor.Type;
+import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.support.descriptor.MethodSource;
@@ -17,6 +19,7 @@ import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.Category;
 import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.Expected;
 
 public class FCSTestExecutionListener implements TestExecutionListener {
@@ -85,8 +88,9 @@ public class FCSTestExecutionListener implements TestExecutionListener {
             List<LogEvent> testLogs = gatherLogs(testIdentifier);
             List<HttpRequestResponseInfo> testHttps = gatherHttpRequestResponseInfos(testIdentifier);
             String name = testIdentifier.getUniqueId();
-            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(),
-                    getExpectedAnnotationValue(testIdentifier), testLogs, testHttps, testExecutionResult);
+            FCSTestResult result = new FCSTestResult(name, getCategoryValue(testIdentifier),
+                    testIdentifier.getDisplayName(), getExpectedAnnotationValue(testIdentifier), testLogs, testHttps,
+                    testExecutionResult);
             results.put(name, result);
 
             logger.info("test finished: {} {}", testIdentifier.getUniqueId(), testExecutionResult);
@@ -99,8 +103,9 @@ public class FCSTestExecutionListener implements TestExecutionListener {
             List<LogEvent> testLogs = gatherLogs(testIdentifier);
             List<HttpRequestResponseInfo> testHttps = gatherHttpRequestResponseInfos(testIdentifier);
             String name = testIdentifier.getUniqueId();
-            FCSTestResult result = new FCSTestResult(name, testIdentifier.getDisplayName(),
-                    getExpectedAnnotationValue(testIdentifier), testLogs, testHttps, reason);
+            FCSTestResult result = new FCSTestResult(name, getCategoryValue(testIdentifier),
+                    testIdentifier.getDisplayName(), getExpectedAnnotationValue(testIdentifier), testLogs, testHttps,
+                    reason);
             results.put(name, result);
 
             logger.info("test skipped: {} {}", testIdentifier.getUniqueId(), reason);
@@ -168,6 +173,24 @@ public class FCSTestExecutionListener implements TestExecutionListener {
             return null;
         }
         return expected.value();
+    }
+
+    private String getCategoryValue(TestIdentifier testIdentifier) {
+        if (!testIdentifier.getSource().isPresent()) {
+            return null;
+        }
+        TestSource source = testIdentifier.getSource().get();
+        if (!(source instanceof MethodSource)) {
+            return null;
+        }
+        MethodSource mSource = (MethodSource) source;
+        Class<?> clazz = mSource.getJavaClass();
+        Optional<Category> maybeCategory = AnnotationUtils.findAnnotation(clazz, Category.class, false);
+        if (!maybeCategory.isPresent()) {
+            return null;
+        }
+        Category category = maybeCategory.get();
+        return category.value();
     }
 
 }

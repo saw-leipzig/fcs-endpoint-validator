@@ -47,17 +47,17 @@ public class FCSEndpointTester {
         request.setUserSearchTerm("test");
         request.setFCSTestProfile(FCSTestProfile.CLARIN_FCS_2_0);
 
-        Map<String, FCSTestResult> results = runValidation(request);
+        FCSEndpointValidationResponse response = runValidation(request);
 
-        // dumpLogs(results);
-        writeTestResults(results, false);
+        // dumpLogs(response.getResults());
+        writeTestResults(response.getResults(), false);
 
         logger.info("done");
     }
 
     // ----------------------------------------------------------------------
 
-    public static Map<String, FCSTestResult> runValidation(FCSEndpointValidationRequest request)
+    public static FCSEndpointValidationResponse runValidation(FCSEndpointValidationRequest request)
             throws IOException, SRUClientException {
         final boolean parallel = false;
         final boolean debug = true;
@@ -158,7 +158,7 @@ public class FCSEndpointTester {
 
         Map<String, FCSTestResult> results = testExecListener.getResults();
         // TODO: check resource leakage for http request/response stuff?
-        return results;
+        return new FCSEndpointValidationResponse(request, results);
     }
 
     private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
@@ -272,10 +272,11 @@ public class FCSEndpointTester {
                     logger.info("      * expected: {}", result.getExpected());
                     break;
                 case WARNING:
-                    logger.info("      * aborted with warning, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
-                            : (result.getTestExecutionResult().getThrowable().isPresent())
-                                    ? result.getTestExecutionResult().getThrowable().get().getMessage()
-                                    : "~~ unknown ~~");
+                    logger.info("      * aborted with warning, reason: {}",
+                            (result.getSkipReason() != null) ? result.getSkipReason()
+                                    : (result.getTestExecutionResult().getThrowable().isPresent())
+                                            ? result.getTestExecutionResult().getThrowable().get().getMessage()
+                                            : "~~ unknown ~~");
                     logger.info("      * expected: {}", result.getExpected());
                     break;
                 case SKIPPED:

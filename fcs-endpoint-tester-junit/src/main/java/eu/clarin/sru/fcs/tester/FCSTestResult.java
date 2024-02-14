@@ -10,6 +10,7 @@ import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.TestAbortedWithWarningExce
 
 public class FCSTestResult {
     private String uniqueId;
+    private String category;
     private String name;
     private String expected;
     private List<LogEvent> logs;
@@ -19,10 +20,11 @@ public class FCSTestResult {
 
     // ----------------------------------------------------------------------
 
-    public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
+    public FCSTestResult(String uniqueId, String category, String name, String expected, List<LogEvent> logs,
             List<HttpRequestResponseInfo> httpRequestResponses,
             TestExecutionResult testExecutionResult, String skipReason) {
         this.uniqueId = uniqueId;
+        this.category = category;
         this.name = name;
         this.expected = expected;
         this.logs = logs;
@@ -31,36 +33,39 @@ public class FCSTestResult {
         this.skipReason = skipReason;
     }
 
-    public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
-            List<HttpRequestResponseInfo> httpRequestResponses,
-            TestExecutionResult testExecutionResult) {
-        this(uniqueId, name, expected, logs, httpRequestResponses, testExecutionResult, null);
+    public FCSTestResult(String uniqueId, String category, String name, String expected, List<LogEvent> logs,
+            List<HttpRequestResponseInfo> httpRequestResponses, TestExecutionResult testExecutionResult) {
+        this(uniqueId, category, name, expected, logs, httpRequestResponses, testExecutionResult, null);
     }
 
-    public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
-            List<HttpRequestResponseInfo> httpRequestResponses,
-            String skipReason) {
-        this(uniqueId, name, expected, logs, httpRequestResponses, null, skipReason);
+    public FCSTestResult(String uniqueId, String category, String name, String expected, List<LogEvent> logs,
+            List<HttpRequestResponseInfo> httpRequestResponses, String skipReason) {
+        this(uniqueId, category, name, expected, logs, httpRequestResponses, null, skipReason);
     }
 
-    public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
+    public FCSTestResult(String uniqueId, String category, String name, String expected, List<LogEvent> logs,
             TestExecutionResult testExecutionResult, String skipReason) {
-        this(uniqueId, name, expected, logs, null, testExecutionResult, skipReason);
+        this(uniqueId, category, name, expected, logs, null, testExecutionResult, skipReason);
     }
 
-    public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs, String skipReason) {
-        this(uniqueId, name, expected, logs, null, null, skipReason);
+    public FCSTestResult(String uniqueId, String category, String name, String expected, List<LogEvent> logs,
+            String skipReason) {
+        this(uniqueId, category, name, expected, logs, null, null, skipReason);
     }
 
-    public FCSTestResult(String uniqueId, String name, String expected, List<LogEvent> logs,
+    public FCSTestResult(String uniqueId, String category, String name, String expected, List<LogEvent> logs,
             TestExecutionResult testExecutionResult) {
-        this(uniqueId, name, expected, logs, null, testExecutionResult, null);
+        this(uniqueId, category, name, expected, logs, null, testExecutionResult, null);
     }
 
     // ----------------------------------------------------------------------
 
     public String getUniqueId() {
         return uniqueId;
+    }
+
+    public String getCategory() {
+        return category;
     }
 
     public String getName() {

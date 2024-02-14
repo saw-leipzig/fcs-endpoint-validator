@@ -41,18 +41,21 @@ public abstract class AbstractFCSTest {
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("explain")
+    @Category("explain")
     public static @interface Explain {
     }
 
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("scan")
+    @Category("scan")
     public static @interface Scan {
     }
 
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("searchRetrieve")
+    @Category("searchRetrieve")
     public static @interface SearchRetrieve {
     }
 
@@ -90,6 +93,12 @@ public abstract class AbstractFCSTest {
     @ClarinFCS10
     @ClarinFCSLegacy
     public static @interface ClarinFCSAnyOld {
+    }
+
+    @Target({ ElementType.TYPE })
+    @Retention(RetentionPolicy.RUNTIME)
+    public static @interface Category {
+        String value();
     }
 
     @Target({ ElementType.METHOD })

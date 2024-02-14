@@ -1,10 +1,6 @@
 package eu.clarin.sru.fcs.tester.ui;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,8 +14,8 @@ import org.springframework.stereotype.Service;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.fcs.tester.FCSEndpointTester;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
+import eu.clarin.sru.fcs.tester.FCSEndpointValidationResponse;
 import eu.clarin.sru.fcs.tester.FCSTestResult;
-
 
 @Service
 public class FCSEndpointTesterService {
@@ -41,20 +37,20 @@ public class FCSEndpointTesterService {
     // ----------------------------------------------------------------------
 
     // @Async
-    public CompletableFuture<List<FCSTestResult>> evalute(FCSEndpointValidationRequest request) {
-        CompletableFuture<List<FCSTestResult>> completableFuture = new CompletableFuture<>();
-        
+    public CompletableFuture<FCSEndpointValidationResponse> evalute(FCSEndpointValidationRequest request) {
+        CompletableFuture<FCSEndpointValidationResponse> completableFuture = new CompletableFuture<>();
+
         executor.submit(() -> {
             try {
-                Map<String, FCSTestResult> results = FCSEndpointTester.runValidation(request);
-                completableFuture.complete(Collections.unmodifiableList(new ArrayList<>(results.values())));
+                FCSEndpointValidationResponse response = FCSEndpointTester.runValidation(request);
+                completableFuture.complete(response);
             } catch (IOException | SRUClientException e) {
                 logger.error("Error running validation", e);
                 completableFuture.obtrudeException(e);
             }
         });
-        
-        return completableFuture; 
+
+        return completableFuture;
     }
 
     // ----------------------------------------------------------------------
