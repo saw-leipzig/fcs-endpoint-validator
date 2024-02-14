@@ -240,7 +240,7 @@ public class MainView extends VerticalLayout {
     public Component createActionButtons() {
         VerticalLayout vlButtons = new VerticalLayout();
         vlButtons.addClassName(Gap.XSMALL);
-        vlButtons.addClassName(Padding.SMALL);
+        vlButtons.addClassName(Padding.XSMALL);
         vlButtons.setWidth("min-content");
         vlButtons.setHeight("min-content");
         vlButtons.setJustifyContentMode(JustifyContentMode.START);
