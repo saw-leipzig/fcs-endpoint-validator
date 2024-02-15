@@ -6,10 +6,14 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.junit.platform.engine.TestExecutionResult;
 import org.opentest4j.IncompleteExecutionException;
 import org.opentest4j.TestAbortedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.TestAbortedWithWarningException;
 
 public class FCSTestResult {
+    private static final Logger logger = LoggerFactory.getLogger(FCSTestResult.class);
+
     private String uniqueId;
     private String category;
     private String name;
@@ -138,10 +142,13 @@ public class FCSTestResult {
                     Throwable ex = testExecutionResult.getThrowable().get();
                     if (ex instanceof TestAbortedException && ex.getMessage().startsWith("Assumption failed")) {
                         return FCSTestResultStatus.SKIPPED;
+                    } else if (ex instanceof TestAbortedWithWarningException) {
+                        return FCSTestResultStatus.WARNING;
                     }
                 }
 
         }
+        logger.warn("Unknown condition for TestExecutionResult! result = {}", testExecutionResult);
         return null;
     }
 

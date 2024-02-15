@@ -1,5 +1,7 @@
 package eu.clarin.sru.fcs.tester.ui;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
@@ -21,7 +23,10 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Pre;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -120,14 +125,32 @@ public class MainView extends VerticalLayout {
             request.setSocketTimeout(selSocketTimeout.getValue());
 
             final UI ui = UI.getCurrent();
-            FCSEndpointTesterService.getInstance().evalute(request).thenAccept((response) -> {
-                ui.access(() -> {
-                    // re-enable input for user
-                    setInputEnabled(true);
-                    // render results
-                    setMainContentResults(response);
+            try {
+                FCSEndpointTesterService.getInstance().evalute(request).thenAccept((response) -> {
+                    ui.access(() -> {
+                        // re-enable input for user
+                        setInputEnabled(true);
+                        // render results
+                        setMainContentResults(response);
+                    });
+                }).exceptionally(ex -> {
+                    logger.error("Exception handler", ex);
+                    final Throwable realEx = ex.getCause();
+                    ui.access(() -> {
+                        // re-enable input for user
+                        setInputEnabled(true);
+                        // show error message
+                        setMainContentError("An error occurred!", realEx);
+                    });
+                    return null;
                 });
-            });
+            } catch (Exception ex) {
+                logger.error("Some unexpected error occured?", ex);
+                // re-enable input for user
+                setInputEnabled(true);
+                // show error message
+                setMainContentError("An internal error occurred!", ex);
+            }
 
             setMainContentNoResults();
         });
@@ -151,6 +174,11 @@ public class MainView extends VerticalLayout {
     public void setMainContentResults(FCSEndpointValidationResponse result) {
         mainContent.removeAll();
         mainContent.add(new ResultsView(result));
+    }
+
+    public void setMainContentError(String title, Throwable t) {
+        mainContent.removeAll();
+        mainContent.add(createShowErrorContent(title, t));
     }
 
     // ----------------------------------------------------------------------
@@ -388,6 +416,41 @@ public class MainView extends VerticalLayout {
         lytNoResults.add(txtNoResults);
 
         return lytNoResults;
+    }
+
+    public Component createShowErrorContent(String title, Throwable t) {
+        VerticalLayout vlError = new VerticalLayout();
+        vlError.setWidth("100%");
+        vlError.setHeight("100%");
+        vlError.getStyle().set("flex-grow", "1");
+        vlError.setJustifyContentMode(JustifyContentMode.CENTER);
+        vlError.setAlignItems(Alignment.CENTER);
+
+        H2 txtErrorTitle = new H2(title);
+        vlError.add(txtErrorTitle);
+
+        Pre txtErrorStacktrace = new Pre();
+        txtErrorStacktrace.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
+                LumoUtility.AlignItems.START, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+                LumoUtility.Padding.Horizontal.SMALL, LumoUtility.Padding.Vertical.XSMALL,
+                LumoUtility.Margin.Top.XSMALL);
+
+        // color the exception title/message
+        Span exceptionTitle = new Span(t.toString());
+        exceptionTitle.addClassName(LumoUtility.TextColor.PRIMARY);
+        txtErrorStacktrace.add(exceptionTitle);
+
+        // let java format us the message ...
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PrintWriter pw = new PrintWriter(baos)) {
+            t.printStackTrace(pw);
+        }
+        String stackTrace = baos.toString();
+        txtErrorStacktrace.add(stackTrace.substring(stackTrace.indexOf("\n") + 1));
+
+        vlError.add(txtErrorStacktrace);
+
+        return vlError;
     }
 
 }

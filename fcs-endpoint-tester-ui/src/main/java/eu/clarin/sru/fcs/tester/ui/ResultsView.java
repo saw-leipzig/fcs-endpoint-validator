@@ -1,5 +1,8 @@
 package eu.clarin.sru.fcs.tester.ui;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,6 +38,9 @@ import eu.clarin.sru.fcs.tester.FCSTestResult;
 import eu.clarin.sru.fcs.tester.HttpRequestResponseInfo;
 
 public class ResultsView extends VerticalLayout {
+
+    // DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public ResultsView(FCSEndpointValidationResponse result) {
 
@@ -205,8 +211,9 @@ public class ResultsView extends VerticalLayout {
                     LumoUtility.TextColor.TERTIARY);
 
             for (LogEvent log : result.getLogs()) {
-                resultDetailLogs.add(new Span(
-                        String.format("[%s] %s", log.getTimeMillis(), log.getMessage().getFormattedMessage())));
+                resultDetailLogs.add(new Span(String.format("[%s] %s",
+                        dateFmt.format(Instant.ofEpochMilli(log.getTimeMillis()).atZone(ZoneId.systemDefault())),
+                        log.getMessage().getFormattedMessage())));
             }
 
             resultDetail.add(resultDetailLogs);
@@ -293,6 +300,12 @@ public class ResultsView extends VerticalLayout {
     }
 
     private Icon createIconForTestStatus(FCSTestResult.FCSTestResultStatus status) {
+        if (status == null) {
+            Icon icon = createIcon(VaadinIcon.EYE, "Success");
+            icon.getElement().getThemeList().add("badge contrast ");
+            return icon;
+        }
+
         Icon icon;
         switch (status) {
             case SUCCESSFUL:
