@@ -26,6 +26,4 @@ public class FCSEndpointTesterServletContextListener implements ServletContextLi
         FCSEndpointTesterService.getInstance().shutdown();
     }
 
-    // ----------------------------------------------------------------------
-
 }

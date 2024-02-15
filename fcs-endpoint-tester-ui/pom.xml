@@ -51,6 +51,14 @@
             <artifactId>ace</artifactId>
             <version>3.4.2</version>
         </dependency>
+        <!-- file download -->
+        <!--
+        <dependency>
+            <groupId>in.virit</groupId>
+            <artifactId>viritin</artifactId>
+            <version>2.7.2</version>
+        </dependency>
+        -->
 
         <!-- SRU/FCS tester library -->
         <dependency>
@@ -98,10 +106,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
             <exclusions>
                 <!-- we need to exclude those since we use slf4j -> log4j for log capturing -->
+                <!--
                 <exclusion>
                     <artifactId>jul-to-slf4j</artifactId>
                     <groupId>org.slf4j</groupId>
                 </exclusion>
+                -->
                 <exclusion>
                     <artifactId>logback-classic</artifactId>
                     <groupId>ch.qos.logback</groupId>
@@ -112,11 +122,34 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!--
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+        <!--
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <optional>true</optional>
+        </dependency>
+        -->
     </dependencies>
 
     <build>

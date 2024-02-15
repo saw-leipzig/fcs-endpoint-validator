@@ -15,7 +15,6 @@ import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.fcs.tester.FCSEndpointTester;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationResponse;
-import eu.clarin.sru.fcs.tester.FCSTestResult;
 
 @Service
 public class FCSEndpointTesterService {

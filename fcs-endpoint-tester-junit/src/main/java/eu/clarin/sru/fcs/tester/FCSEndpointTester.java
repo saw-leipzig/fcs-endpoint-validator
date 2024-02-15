@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.tester;
 
 import static org.junit.platform.engine.discovery.ClassNameFilter.includeClassNamePatterns;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage;
 import static org.junit.platform.launcher.TagFilter.includeTags;
 
@@ -30,14 +31,32 @@ import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector;
 import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector.AutodetectedFCSVersion;
+import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest;
+import eu.clarin.sru.fcs.tester.tests.FCSExplainTest;
+import eu.clarin.sru.fcs.tester.tests.FCSScanTest;
+import eu.clarin.sru.fcs.tester.tests.FCSSearchTest;
 
 public class FCSEndpointTester {
     protected static final Logger logger = LoggerFactory.getLogger(FCSEndpointTester.class);
     protected static final NameAbbreviator logNameConverter = NameAbbreviator.getAbbreviator("1.");
+
+    static {
+        // @formatter:off
+        // try (InputStream is = FCSEndpointTester.class.getClassLoader().getResourceAsStream("logging.properties")) {
+        //     java.util.logging.LogManager.getLogManager().readConfiguration(is);
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
+        // @formatter:on
+
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+    }
 
     public static void main(String[] args) throws SRUClientException, IOException {
         logger.info("Start FCS Endpoint Tester!");
@@ -104,6 +123,12 @@ public class FCSEndpointTester {
         ldRequestBuilder
                 // what test classes to run
                 .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
+                // this does not really seem to work
+                // .selectors(selectPackage(AbstractFCSTest.class.getPackageName()))
+                // this works in SpringBoot with its different dependency/classpath structure
+                // but is not really too flexible
+                .selectors(selectClass(FCSExplainTest.class), selectClass(FCSScanTest.class),
+                        selectClass(FCSSearchTest.class))
                 .filters(includeClassNamePatterns(".*Test"));
 
         if (!runAllTests && request.getFCSTestProfile() != null) {
