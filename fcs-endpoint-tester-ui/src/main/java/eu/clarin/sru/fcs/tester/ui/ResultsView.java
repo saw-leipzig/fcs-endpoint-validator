@@ -18,6 +18,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Pre;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -164,6 +165,32 @@ public class ResultsView extends VerticalLayout {
 
                 btnViewHttp.addClickListener(event -> showHttpInfoDialog(info));
             }
+        }
+
+        if (result.getException() != null) {
+            H4 txtLogHeader = new H4("Exception:");
+            txtLogHeader.addClassNames(LumoUtility.Margin.Top.MEDIUM, LumoUtility.FontSize.SMALL);
+            resultDetail.add(txtLogHeader);
+
+            Throwable t = result.getException();
+            Pre resultDetailException = new Pre();
+            resultDetailException.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
+                    LumoUtility.AlignItems.START, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+                    LumoUtility.Padding.Horizontal.SMALL, LumoUtility.Padding.Vertical.XSMALL,
+                    LumoUtility.Margin.Top.XSMALL);
+
+            Span exceptionTitle = new Span(t.toString());
+            exceptionTitle.addClassName(LumoUtility.TextColor.PRIMARY);
+            resultDetailException.add(exceptionTitle);
+            for (StackTraceElement ste : t.getStackTrace()) {
+                if (ste.toString().startsWith("java.base/")) {
+                    // stop if we reach internals? (probably)
+                    break;
+                }
+                resultDetailException.add(String.format("\tat %s\n", ste));
+            }
+
+            resultDetail.add(resultDetailException);
         }
 
         if (!result.getLogs().isEmpty()) {

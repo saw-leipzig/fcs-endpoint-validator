@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.logging.log4j.core.LogEvent;
 import org.junit.platform.engine.TestExecutionResult;
+import org.opentest4j.IncompleteExecutionException;
 import org.opentest4j.TestAbortedException;
 
 import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.TestAbortedWithWarningException;
@@ -90,6 +91,16 @@ public class FCSTestResult {
 
     public String getSkipReason() {
         return skipReason;
+    }
+
+    public Throwable getException() {
+        if (testExecutionResult.getThrowable().isPresent()) {
+            Throwable t = testExecutionResult.getThrowable().get();
+            if (!(t instanceof IncompleteExecutionException)) {
+                return t;
+            }
+        }
+        return null;
     }
 
     public String getMessage() {

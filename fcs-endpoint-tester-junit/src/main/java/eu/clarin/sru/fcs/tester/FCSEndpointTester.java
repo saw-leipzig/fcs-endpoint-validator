@@ -311,6 +311,10 @@ public class FCSEndpointTester {
                 default:
                     break;
             }
+            if (result.getException() != null) {
+                logger.info("      * exception: >> {} << at {}", result.getException().toString(),
+                        result.getException().getStackTrace()[0].toString());
+            }
 
         });
     }
