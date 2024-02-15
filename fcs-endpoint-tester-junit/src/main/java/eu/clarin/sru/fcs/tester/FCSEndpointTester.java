@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.tester;
 
 import static org.junit.platform.engine.discovery.ClassNameFilter.includeClassNamePatterns;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectPackage;
+import static org.junit.platform.launcher.TagFilter.includeTags;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -61,6 +62,7 @@ public class FCSEndpointTester {
             throws IOException, SRUClientException {
         final boolean parallel = false;
         final boolean debug = true;
+        final boolean runAllTests = false;
 
         // initial check if endpoint is available
         if (request.isPerformProbeRequest()) {
@@ -97,11 +99,31 @@ public class FCSEndpointTester {
         FCSTestContextFactoryStore.set(factoryId, contextFactory);
 
         // what tests to run
-        LauncherDiscoveryRequestBuilder ldRequestBuilder = LauncherDiscoveryRequestBuilder.request()
+        LauncherDiscoveryRequestBuilder ldRequestBuilder = LauncherDiscoveryRequestBuilder.request();
+
+        ldRequestBuilder
                 // what test classes to run
                 .selectors(selectPackage("eu.clarin.sru.fcs.tester.tests"))
-                .filters(includeClassNamePatterns(".*Test"))
+                .filters(includeClassNamePatterns(".*Test"));
 
+        if (!runAllTests && request.getFCSTestProfile() != null) {
+            // filter test classes based on clarin fcs version test profile annotation
+            switch (request.getFCSTestProfile()) {
+                case CLARIN_FCS_2_0:
+                    ldRequestBuilder.filters(includeTags("clarin-fcs-2.0"));
+                    break;
+                case CLARIN_FCS_1_0:
+                    ldRequestBuilder.filters(includeTags("clarin-fcs-1.0"));
+                    break;
+                case CLARIN_FCS_LEGACY:
+                    ldRequestBuilder.filters(includeTags("clarin-fcs-legacy"));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        ldRequestBuilder
                 // lets store our factory for the ParameterResolver
                 .configurationParameter(FCSTestContextParameterResolver.PROPERTY_TEST_CONTEXT_FACTORY_ID, factoryId)
 
