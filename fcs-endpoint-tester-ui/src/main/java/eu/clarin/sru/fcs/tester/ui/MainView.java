@@ -8,12 +8,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.Uses;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Anchor;
@@ -23,6 +26,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.PreserveOnRefresh;
@@ -33,6 +37,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationResponse;
+import eu.clarin.sru.fcs.tester.FCSTestProfile;
 
 @PageTitle("FCS SRU Endpoint Conformance Tester")
 @Route
@@ -49,6 +54,13 @@ public class MainView extends VerticalLayout {
     public TextField txtSearchTerm;
     public Button btnStart;
     public Button btnConfig;
+
+    Dialog dlgAdditionalConfigurations;
+    Select<FCSTestProfile> selTestProfile;
+    Checkbox chkStrictMode;
+    Checkbox chkProbeRequest;
+    Select<Integer> selConnectTimeout;
+    Select<Integer> selSocketTimeout;
 
     // ----------------------------------------------------------------------
 
@@ -84,6 +96,7 @@ public class MainView extends VerticalLayout {
 
         add(createHeader());
         add(createUserInputArea());
+        add(createAdditionConfigurationsDialog());
         add(mainContent);
         add(createFooter());
 
@@ -95,12 +108,18 @@ public class MainView extends VerticalLayout {
             // input field validation should happen automatically
 
             // build FCS Validation Request
-            FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
+            final FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
+            // required inputs
             request.setBaseURI(txtEndpointURL.getValue().strip());
             request.setUserSearchTerm(txtSearchTerm.getValue());
+            // and additional configurations
+            request.setFCSTestProfile(selTestProfile.getValue());
+            request.setStrictMode(chkStrictMode.getValue());
+            request.setPerformProbeRequest(chkProbeRequest.getValue());
+            request.setConnectTimeout(selConnectTimeout.getValue());
+            request.setSocketTimeout(selSocketTimeout.getValue());
 
             final UI ui = UI.getCurrent();
-
             FCSEndpointTesterService.getInstance().evalute(request).thenAccept((response) -> {
                 ui.access(() -> {
                     // re-enable input for user
@@ -114,8 +133,7 @@ public class MainView extends VerticalLayout {
         });
 
         btnConfig.addClickListener(event -> {
-            btnStart.setEnabled(true);
-            setMainContentNoResults();
+            dlgAdditionalConfigurations.open();
         });
     }
 
@@ -184,6 +202,8 @@ public class MainView extends VerticalLayout {
 
         return footerRow;
     }
+
+    // ----------------------------------------------------------------------
 
     public Component createInputFields() {
         FormLayout flInputs = new FormLayout();
@@ -278,6 +298,77 @@ public class MainView extends VerticalLayout {
 
         return headerRow;
     }
+
+    public Component createAdditionConfigurationsDialog() {
+        dlgAdditionalConfigurations = new Dialog();
+        dlgAdditionalConfigurations.setHeaderTitle("More Configurations");
+
+        Button closeButton = new Button(new Icon("lumo", "cross"), (e) -> dlgAdditionalConfigurations.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        dlgAdditionalConfigurations.getHeader().add(closeButton);
+
+        FormLayout flAdditionInputs = new FormLayout();
+        flAdditionInputs.setMaxWidth("20rem");
+        flAdditionInputs.setResponsiveSteps(new ResponsiveStep("0", 1));
+
+        selTestProfile = new Select<>();
+        selTestProfile.setLabel("FCS Test Profile");
+        selTestProfile.addClassNames(LumoUtility.Padding.Top.NONE, LumoUtility.Padding.Bottom.MEDIUM);
+        selTestProfile.setEmptySelectionAllowed(true);
+        selTestProfile.setEmptySelectionCaption("Auto detect");
+        selTestProfile.setItemLabelGenerator(profile -> (profile == null) ? "Auto detect" : profile.toDisplayString());
+        selTestProfile.setItems(FCSTestProfile.CLARIN_FCS_2_0, FCSTestProfile.CLARIN_FCS_1_0,
+                FCSTestProfile.CLARIN_FCS_LEGACY);
+        flAdditionInputs.add(selTestProfile);
+
+        chkStrictMode = new Checkbox();
+        chkStrictMode.setLabel("Perform checks in strict mode");
+        chkStrictMode.setValue(true);
+        flAdditionInputs.add(chkStrictMode);
+
+        chkProbeRequest = new Checkbox();
+        chkProbeRequest.setLabel("Perform HTTP HEAD probe request");
+        chkProbeRequest.setValue(true);
+        flAdditionInputs.add(chkProbeRequest);
+
+        Integer[] timeouts = new Integer[] { 5_000, 10_000, 15_000, 30_000, 60_000, 120_000, 180_000, 300_000 };
+        ItemLabelGenerator<Integer> timeoutString = new ItemLabelGenerator<>() {
+            @Override
+            public String apply(Integer timeout) {
+                if (timeout <= 0) {
+                    return "No timeout";
+                } else if (timeout < 1000) {
+                    return String.format("%s milliseconds", timeout);
+                } else if (timeout >= 1000 && timeout < 60_000) {
+                    return String.format("%s second%s", Math.round(timeout / 1000),
+                            (Math.round(timeout / 1000) == 1) ? "" : "s");
+                } else {
+                    return String.format("%s minute%s", Math.round(timeout / 1000 / 60),
+                            (Math.round(timeout / 1000 / 60) == 1) ? "" : "s");
+                }
+            }
+        };
+
+        selConnectTimeout = new Select<>();
+        selConnectTimeout.setLabel("Connection Timeout");
+        selConnectTimeout.setItemLabelGenerator(timeoutString);
+        selConnectTimeout.setItems(timeouts);
+        selConnectTimeout.setValue(15_000);
+        flAdditionInputs.add(selConnectTimeout);
+
+        selSocketTimeout = new Select<>();
+        selSocketTimeout.setLabel("Socket Timeout");
+        selSocketTimeout.setItemLabelGenerator(timeoutString);
+        selSocketTimeout.setItems(timeouts);
+        selSocketTimeout.setValue(30_000);
+        flAdditionInputs.add(selSocketTimeout);
+
+        dlgAdditionalConfigurations.add(flAdditionInputs);
+
+        return dlgAdditionalConfigurations;
+    }
+
+    // ----------------------------------------------------------------------
 
     public Component createNoResultsPlaceholder() {
         VerticalLayout lytNoResults = new VerticalLayout();

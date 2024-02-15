@@ -8,7 +8,7 @@
   <artifactId>endpoint-tester</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
-  <name>FCS SRU Endpoint Validator</name>
+  <name>FCS SRU Endpoint Validator Core</name>
   <description>SRU/FCS Endpoint tester using JUnit5.</description>
   <organization>
     <name>Saxon Academy of Sciences and Humanities in Leipzig</name>
