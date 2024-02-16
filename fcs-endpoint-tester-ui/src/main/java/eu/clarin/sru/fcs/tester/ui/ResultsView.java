@@ -1,10 +1,20 @@
 package eu.clarin.sru.fcs.tester.ui;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 import org.apache.http.HttpRequest;
 import org.apache.http.client.methods.HttpRequestWrapper;
@@ -276,13 +286,33 @@ public class ResultsView extends VerticalLayout {
         ace.setMode(AceMode.xml);
         ace.setReadOnly(true);
         ace.setWrap(true);
-        ace.setValue(new String(info.getResponseBytes()));
+        ace.setValue(getByteAsString(info.getResponseBytes()));
         ace.addClassName(LumoUtility.Margin.Top.MEDIUM);
         viewCodeDialog.add(ace);
 
         viewCodeDialog.open();
 
         return viewCodeDialog;
+    }
+
+    private static String getByteAsString(byte[] bytes) {
+        String encoding = Optional.ofNullable(detectEncoding(bytes)).orElse(StandardCharsets.UTF_8.name());
+        try {
+            return new String(bytes, encoding);
+        } catch (UnsupportedEncodingException e) {
+            return new String(bytes);
+        }
+    }
+
+    private static String detectEncoding(byte[] bytes) {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        InputStreamReader isr = new InputStreamReader(bais);
+        try {
+            XMLStreamReader xsr = XMLInputFactory.newInstance().createXMLStreamReader(isr);
+            return Optional.ofNullable(xsr.getCharacterEncodingScheme()).orElse(xsr.getEncoding());
+        } catch (XMLStreamException | FactoryConfigurationError e) {
+            return null;
+        }
     }
 
     // ----------------------------------------------------------------------
