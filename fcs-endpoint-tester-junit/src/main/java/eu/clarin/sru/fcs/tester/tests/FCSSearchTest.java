@@ -377,7 +377,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     @Expected("Expecting at least one record in CLARIN-FCS record schema (without any surrogate diagnostics)")
     void doFCS20SearchAndRequestRecordSchema(FCSTestContext context) throws SRUClientException {
         assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0, "Only checked for FCS 2.0.");
-        assumeTrue(endpointDescription != null, "No Endpoint Description?");
+        assumeTrue(endpointDescription != null, "Endpoint did not supply a valid Endpoint Description?");
 
         // do we support ADV search?
         boolean supportsADV = endpointDescription.getCapabilities()

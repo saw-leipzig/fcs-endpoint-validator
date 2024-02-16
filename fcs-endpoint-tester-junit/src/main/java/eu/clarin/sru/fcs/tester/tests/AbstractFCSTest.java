@@ -21,20 +21,21 @@ import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRUExplainResponse;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
-import eu.clarin.sru.fcs.tester.FCSTestContext;
 import eu.clarin.sru.fcs.tester.FCSTestContextParameterResolver;
+import eu.clarin.sru.fcs.tester.FCSTestLifecycleMethodExecutionExceptionHandler;
 import eu.clarin.sru.fcs.tester.FCSTestProfile;
 
 @ExtendWith(FCSTestContextParameterResolver.class)
+@ExtendWith(FCSTestLifecycleMethodExecutionExceptionHandler.class)
 public abstract class AbstractFCSTest {
 
-    protected boolean isLegacyFCS(FCSTestContext context) {
-        // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-engine/src/main/java/org/junit/jupiter/engine/extension/DisabledCondition.java
-        // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Disabled.java
-        // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Assumptions.java
-        // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Assertions.java
-        return false;
-    }
+    // protected boolean isLegacyFCS(FCSTestContext context) {
+    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-engine/src/main/java/org/junit/jupiter/engine/extension/DisabledCondition.java
+    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Disabled.java
+    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Assumptions.java
+    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Assertions.java
+    //     return false;
+    // }
 
     // ----------------------------------------------------------------------
 
