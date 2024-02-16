@@ -22,6 +22,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Hr;
@@ -227,6 +228,7 @@ public class MainView extends VerticalLayout {
         Anchor linkEmail = new Anchor();
         linkEmail.setText("fcs@clarin.eu");
         linkEmail.setHref("mailto:fcs@clarin.eu");
+        linkEmail.setTarget(AnchorTarget.BLANK);
         txtFooter.setWidth("max-content");
         txtFooter.add(linkEmail);
 

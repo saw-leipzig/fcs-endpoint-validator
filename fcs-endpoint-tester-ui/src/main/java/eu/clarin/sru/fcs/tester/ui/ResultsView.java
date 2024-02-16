@@ -27,6 +27,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -74,7 +75,8 @@ public class ResultsView extends VerticalLayout {
     public List<Component> createResultsSummary(FCSEndpointValidationResponse result) {
         H2 txtResultsFor = new H2();
         txtResultsFor.add("Result for ");
-        txtResultsFor.add(new Anchor(result.getRequest().getBaseURI(), result.getRequest().getBaseURI()));
+        txtResultsFor.add(
+                new Anchor(result.getRequest().getBaseURI(), result.getRequest().getBaseURI(), AnchorTarget.BLANK));
         txtResultsFor.add(" (using test profile ");
         txtResultsFor.add(result.getRequest().getFCSTestProfile().toDisplayString());
         txtResultsFor.add("):");
@@ -266,7 +268,7 @@ public class ResultsView extends VerticalLayout {
         txtHeaderRequest.addClassName(LumoUtility.FontSize.LARGE);
         layoutViewCodeMeta.add(txtHeaderRequest);
         Span url = new Span("URL: ");
-        url.add(new Anchor(original.getRequestLine().getUri(), original.getRequestLine().getUri()));
+        url.add(new Anchor(original.getRequestLine().getUri(), original.getRequestLine().getUri(), AnchorTarget.BLANK));
         layoutViewCodeMeta.add(url);
         if (original.getAllHeaders().length > 0) {
             layoutViewCodeMeta.add(new Span(String.format("Headers: %s", Arrays.toString(original.getAllHeaders()))));
