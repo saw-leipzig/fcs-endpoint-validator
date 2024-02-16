@@ -45,6 +45,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationResponse;
+import eu.clarin.sru.fcs.tester.FCSTestConstants;
 import eu.clarin.sru.fcs.tester.FCSTestProfile;
 
 @PageTitle("FCS SRU Endpoint Conformance Tester")
@@ -67,6 +68,7 @@ public class MainView extends VerticalLayout {
     Select<FCSTestProfile> selTestProfile;
     Checkbox chkStrictMode;
     Checkbox chkProbeRequest;
+    Select<Integer> selIndentResponse;
     Select<Integer> selConnectTimeout;
     Select<Integer> selSocketTimeout;
 
@@ -124,6 +126,7 @@ public class MainView extends VerticalLayout {
             request.setFCSTestProfile(selTestProfile.getValue());
             request.setStrictMode(chkStrictMode.getValue());
             request.setPerformProbeRequest(chkProbeRequest.getValue());
+            request.setIndentResponse(selIndentResponse.getValue());
             request.setConnectTimeout(selConnectTimeout.getValue());
             request.setSocketTimeout(selSocketTimeout.getValue());
 
@@ -397,6 +400,28 @@ public class MainView extends VerticalLayout {
         chkProbeRequest.setLabel("Perform HTTP HEAD probe request");
         chkProbeRequest.setValue(true);
         flAdditionInputs.add(chkProbeRequest);
+
+        selIndentResponse = new Select<>();
+        selIndentResponse.setLabel("Optional response indentation");
+        selIndentResponse.setTooltipText(
+                "Optional response indentation. If set to -1/'off' then the parameter '"
+                        + FCSTestConstants.X_INDENT_RESPONSE + "' is not sent."
+                        + " This parameter will be set for all test requests!");
+        selIndentResponse.setItemLabelGenerator(new ItemLabelGenerator<>() {
+            @Override
+            public String apply(Integer indent) {
+                if (indent < 0) {
+                    return "off, unsent";
+                }
+                if (indent == 0) {
+                    return "off, sent (0)";
+                }
+                return String.valueOf(indent);
+            }
+        });
+        selIndentResponse.setItems(new Integer[] { -1, 0, 1, 2, 4 });
+        selIndentResponse.setValue(-1);
+        flAdditionInputs.add(selIndentResponse);
 
         Integer[] timeouts = new Integer[] { 5_000, 10_000, 15_000, 30_000, 60_000, 120_000, 180_000, 300_000 };
         ItemLabelGenerator<Integer> timeoutString = new ItemLabelGenerator<>() {

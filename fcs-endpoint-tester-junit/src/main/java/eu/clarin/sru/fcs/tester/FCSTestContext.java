@@ -9,6 +9,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 
 import eu.clarin.sru.client.SRUClient;
 import eu.clarin.sru.client.SRUClientConfig;
+import eu.clarin.sru.client.SRUClientConstants;
 import eu.clarin.sru.client.SRUExplainRequest;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
@@ -24,18 +25,22 @@ import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordDataParser;
 
 public class FCSTestContext {
     public static final String DEFAULT_USER_AGENT = "FCSEndpointTester/1.0.0";
+    public static final boolean DEFAULT_STRICT_MODE = true;
+    public static final int DEFAULT_INDENT_RESPONSE = -1;
 
     private Map<String, Object> properties;
     private final FCSTestProfile profile;
     private final String baseURI;
     private final boolean strictMode;
+    private final int indentResponse;
     private final CloseableHttpClient httpClient;
 
     private final String userSearchTerm;
 
     // ----------------------------------------------------------------------
 
-    public FCSTestContext(FCSTestProfile profile, String baseURI, boolean strictMode, CloseableHttpClient httpClient, String userSearchTerm) {
+    public FCSTestContext(FCSTestProfile profile, String baseURI, boolean strictMode, CloseableHttpClient httpClient,
+            String userSearchTerm, int indentResponse) {
         if (profile == null) {
             throw new NullPointerException("profile == null");
         }
@@ -46,6 +51,7 @@ public class FCSTestContext {
         this.profile = profile;
         this.baseURI = baseURI;
         this.strictMode = strictMode;
+        this.indentResponse = indentResponse;
         this.httpClient = httpClient;
 
         this.userSearchTerm = userSearchTerm;
@@ -63,6 +69,10 @@ public class FCSTestContext {
         return strictMode;
     }
 
+    public int getIndentResponse() {
+        return indentResponse;
+    }
+
     public CloseableHttpClient getHttpClient() {
         return httpClient;
     }
@@ -78,18 +88,27 @@ public class FCSTestContext {
     public SRUExplainRequest createExplainRequest() {
         SRUExplainRequest request = new SRUExplainRequest(baseURI.toString());
         request.setStrictMode(strictMode);
+        if (indentResponse >= 0) {
+            request.setExtraRequestData(SRUClientConstants.X_INDENT_RESPONSE, String.valueOf(indentResponse));
+        }
         return request;
     }
 
     public SRUScanRequest createScanRequest() {
         SRUScanRequest request = new SRUScanRequest(baseURI.toString());
         request.setStrictMode(strictMode);
+        if (indentResponse >= 0) {
+            request.setExtraRequestData(SRUClientConstants.X_INDENT_RESPONSE, String.valueOf(indentResponse));
+        }
         return request;
     }
 
     public SRUSearchRetrieveRequest createSearchRetrieveRequest() {
         SRUSearchRetrieveRequest request = new SRUSearchRetrieveRequest(baseURI.toString());
         request.setStrictMode(strictMode);
+        if (indentResponse >= 0) {
+            request.setExtraRequestData(SRUClientConstants.X_INDENT_RESPONSE, String.valueOf(indentResponse));
+        }
         return request;
     }
 

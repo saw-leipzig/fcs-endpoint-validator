@@ -11,7 +11,8 @@ public class FCSTestContextFactory {
     private Map<String, Object> properties;
     private FCSTestProfile profile;
     private String baseURI;
-    private boolean strictMode = true;
+    private boolean strictMode = FCSTestContext.DEFAULT_STRICT_MODE;
+    private int indentResponse = FCSTestContext.DEFAULT_INDENT_RESPONSE;
     private CloseableHttpClient httpClient;
 
     private String userSearchTerm;
@@ -46,6 +47,14 @@ public class FCSTestContextFactory {
 
     public void setStrictMode(boolean strictMode) {
         this.strictMode = strictMode;
+    }
+
+    public int getIndentResponse() {
+        return indentResponse;
+    }
+
+    public void setIndentResponse(int indentResponse) {
+        this.indentResponse = indentResponse;
     }
 
     public CloseableHttpClient getHttpClient() {
@@ -120,7 +129,8 @@ public class FCSTestContextFactory {
             testHttpClient = FCSTestHttpClientFactory.getInstance().newClient();
         }
 
-        final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, testHttpClient, userSearchTerm);
+        final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, testHttpClient, userSearchTerm,
+                indentResponse);
         if (properties != null) {
             for (Map.Entry<String, Object> property : properties.entrySet()) {
                 context.setProperty(property.getKey(), property.getValue());

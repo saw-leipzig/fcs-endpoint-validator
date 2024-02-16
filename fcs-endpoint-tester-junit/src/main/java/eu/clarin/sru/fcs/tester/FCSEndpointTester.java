@@ -116,6 +116,7 @@ public class FCSEndpointTester {
         FCSTestContextFactory contextFactory = FCSTestContextFactory.newInstance();
         contextFactory.setFCSTestProfile(request.getFCSTestProfile());
         contextFactory.setStrictMode(request.isStrictMode());
+        contextFactory.setIndentResponse(request.getIndentResponse());
         contextFactory.setBaseURI(request.getBaseURI());
         contextFactory.setUserSearchTerm(request.getUserSearchTerm());
         // we set client here to reuse it for all tests

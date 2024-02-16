@@ -12,7 +12,8 @@ public class FCSEndpointValidationRequest {
     private boolean performProbeRequest = true;
 
     private FCSTestProfile profile = null;
-    private boolean strictMode = true;
+    private boolean strictMode = FCSTestContext.DEFAULT_STRICT_MODE;
+    private int indentResponse = FCSTestContext.DEFAULT_INDENT_RESPONSE;
     private String baseURI;
 
     private String userSearchTerm;
@@ -68,6 +69,14 @@ public class FCSEndpointValidationRequest {
 
     public void setStrictMode(boolean strictMode) {
         this.strictMode = strictMode;
+    }
+
+    public int getIndentResponse() {
+        return indentResponse;
+    }
+
+    public void setIndentResponse(int indentResponse) {
+        this.indentResponse = indentResponse;
     }
 
     public String getBaseURI() {
