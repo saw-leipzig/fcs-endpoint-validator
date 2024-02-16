@@ -19,7 +19,8 @@ package eu.clarin.sru.fcs.tester;
 public enum FCSTestProfile {
     CLARIN_FCS_1_0(0),
     CLARIN_FCS_2_0(1),
-    CLARIN_FCS_LEGACY(2);
+    CLARIN_FCS_LEGACY(2),
+    LEX_FCS(3);
 
     final int id;
 
@@ -35,6 +36,8 @@ public enum FCSTestProfile {
                 return "CLARIN FCS 2.0";
             case CLARIN_FCS_LEGACY:
                 return "Legacy FCS";
+            case LEX_FCS:
+                return "LexFCS";
             default:
                 return "";
         }

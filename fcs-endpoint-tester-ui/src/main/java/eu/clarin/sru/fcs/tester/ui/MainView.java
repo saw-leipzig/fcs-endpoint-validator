@@ -24,15 +24,18 @@ import com.vaadin.flow.component.formlayout.FormLayout.ResponsiveStep;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Pre;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.PreserveOnRefresh;
 import com.vaadin.flow.router.Route;
@@ -346,7 +349,43 @@ public class MainView extends VerticalLayout {
         selTestProfile.setEmptySelectionCaption("Auto detect");
         selTestProfile.setItemLabelGenerator(profile -> (profile == null) ? "Auto detect" : profile.toDisplayString());
         selTestProfile.setItems(FCSTestProfile.CLARIN_FCS_2_0, FCSTestProfile.CLARIN_FCS_1_0,
-                FCSTestProfile.CLARIN_FCS_LEGACY);
+                FCSTestProfile.CLARIN_FCS_LEGACY, FCSTestProfile.LEX_FCS);
+        selTestProfile.addComponentAtIndex(1, new Hr());
+        selTestProfile.addComponents(FCSTestProfile.CLARIN_FCS_2_0, new Hr());
+        selTestProfile.addComponents(FCSTestProfile.CLARIN_FCS_LEGACY, new Hr());
+        selTestProfile.setRenderer(new ComponentRenderer<>(profile -> {
+            FlexLayout wrapper = new FlexLayout();
+            wrapper.setAlignItems(Alignment.CENTER);
+            wrapper.addClassName(Gap.SMALL);
+
+            Icon icon;
+            String label;
+            switch (profile) {
+                case CLARIN_FCS_2_0:
+                    label = "Latest FCS version";
+                    icon = VaadinIcon.CHECK.create();
+                    icon.getElement().getThemeList().add("badge success");
+                    break;
+                case LEX_FCS:
+                    label = "Experimental FCS version";
+                    icon = VaadinIcon.TOOLS.create();
+                    icon.getElement().getThemeList().add("badge contrast");
+                    break;
+                default:
+                    label = "Legacy or unknown FCS version";
+                    icon = VaadinIcon.EXCLAMATION.create();
+                    icon.getElement().getThemeList().add("badge");
+                    break;
+            }
+            icon.getStyle().set("padding", "var(--lumo-space-xs");
+            icon.getElement().setAttribute("aria-label", label);
+            icon.getElement().setAttribute("title", label);
+            wrapper.add(icon);
+
+            wrapper.add(new Span(profile.toDisplayString()));
+
+            return wrapper;
+        }));
         flAdditionInputs.add(selTestProfile);
 
         chkStrictMode = new Checkbox();

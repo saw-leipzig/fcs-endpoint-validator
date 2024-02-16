@@ -20,6 +20,7 @@ import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewHits;
+import eu.clarin.sru.fcs.tester.FCSTestConstants;
 import eu.clarin.sru.fcs.tester.FCSTestContext;
 import eu.clarin.sru.fcs.tester.FCSTestProfile;
 import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest.Explain;
@@ -150,10 +151,12 @@ public class FCSExplainTest extends AbstractFCSTest {
     @Test
     @Order(1100)
     @ClarinFCS20
+    @LexFCS
     @DisplayName("Check for a valid FCS endpoint description")
     @Expected("Expecting exactly one valid FCS endpoint decription conforming to FCS 2.0 spec")
     void doExplainHasValidEndpointDescriptionInFCS20(FCSTestContext context) throws SRUClientException {
-        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0, "Only checked for FCS 2.0.");
+        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0
+                || context.getFCSTestProfile() == FCSTestProfile.LEX_FCS, "Only checked for FCS 2.0.");
 
         SRUExplainRequest req = context.createExplainRequest();
         req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
@@ -170,7 +173,6 @@ public class FCSExplainTest extends AbstractFCSTest {
                 "FCS 2.0 endpoint must provide an endpoint description with version set to \"2\"");
 
         boolean supportsADV = desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_ADVANCED_SEARCH);
-        // TODO: store check that we support ADV in context properties?
 
         boolean foundHits = false;
         boolean foundAdv = false;
@@ -203,6 +205,40 @@ public class FCSExplainTest extends AbstractFCSTest {
                     "Capabilites indicate support for Advanced Search, so Endpoint must supported layers");
         }
 
+    }
+
+    @Test
+    @Order(1200)
+    @ClarinFCS20
+    @LexFCS
+    @DisplayName("Check for a valid FCS endpoint description with 'lex-search' capability")
+    @Expected("Expecting exactly one valid FCS endpoint decription conforming to FCS 2.0 spec with a 'http://clarin.eu/fcs/capability/lex-search' capability.")
+    void doExplainHasValidEndpointDescriptionInFCS20ForLexFCS(FCSTestContext context) throws SRUClientException {
+        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0
+                || context.getFCSTestProfile() == FCSTestProfile.LEX_FCS, "Only checked for FCS 2.0.");
+
+        SRUExplainRequest req = context.createExplainRequest();
+        req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
+        SRUExplainResponse res = context.getClient().explain(req);
+
+        List<ClarinFCSEndpointDescription> descs = res.getExtraResponseData(ClarinFCSEndpointDescription.class);
+        assertNotNull(descs, "Endpoint did not return a CLARIN FCS endpoint description");
+        assertEquals(1, descs.size(),
+                "Endpoint must only return one instance of a CLARIN FCS endpoint description");
+
+        // validate FCS 2.0 Endpoint Description
+        ClarinFCSEndpointDescription desc = descs.get(0);
+        assertEquals(2, desc.getVersion(),
+                "FCS 2.0 endpoint must provide an endpoint description with version set to \"2\"");
+
+        boolean supportsLex = desc.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH);
+
+        // assert since it is required for LexFCS searches!
+        assertTrue(supportsLex, "Endpoint must declare support for LexFCS using Capability = "
+                + FCSTestConstants.CAPABILITY_LEX_SEARCH + "!");
+
+        assertNotEquals(0, desc.getResources().size(),
+                "No resources declared. Endpoint must declare at least one Resource");
     }
 
 }

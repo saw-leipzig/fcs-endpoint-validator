@@ -83,9 +83,17 @@ public abstract class AbstractFCSTest {
 
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
+    @Tag("lex-fcs")
+    public static @interface LexFCS {
+        public static final FCSTestProfile profile = FCSTestProfile.LEX_FCS;
+    }
+
+    @Target({ ElementType.TYPE, ElementType.METHOD })
+    @Retention(RetentionPolicy.RUNTIME)
     @ClarinFCS20
     @ClarinFCS10
     @ClarinFCSLegacy
+    @LexFCS
     public static @interface ClarinFCSAny {
     }
 

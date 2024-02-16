@@ -69,7 +69,6 @@ public class FCSTestContext {
 
     // ----------------------------------------------------------------------
 
-
     public String getUserSearchTerm() {
         return userSearchTerm;
     }
@@ -103,6 +102,8 @@ public class FCSTestContext {
         // SRU version
         SRUVersion version = SRUVersion.VERSION_1_2;
         switch (profile) {
+            case LEX_FCS:
+                /* $FALL-THROUGH$ */
             case CLARIN_FCS_2_0:
                 version = SRUVersion.VERSION_2_0;
                 break;

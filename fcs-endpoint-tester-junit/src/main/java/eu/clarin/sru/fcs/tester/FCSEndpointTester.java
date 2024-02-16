@@ -33,10 +33,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import eu.clarin.sru.client.SRUClient;
 import eu.clarin.sru.client.SRUClientException;
+import eu.clarin.sru.client.SRUExplainRequest;
+import eu.clarin.sru.client.SRUExplainResponse;
+import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.client.fcs.ClarinFCSConstants;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector;
 import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector.AutodetectedFCSVersion;
-import eu.clarin.sru.fcs.tester.tests.AbstractFCSTest;
 import eu.clarin.sru.fcs.tester.tests.FCSExplainTest;
 import eu.clarin.sru.fcs.tester.tests.FCSScanTest;
 import eu.clarin.sru.fcs.tester.tests.FCSSearchTest;
@@ -134,6 +141,10 @@ public class FCSEndpointTester {
         if (!runAllTests && request.getFCSTestProfile() != null) {
             // filter test classes based on clarin fcs version test profile annotation
             switch (request.getFCSTestProfile()) {
+                case LEX_FCS:
+                    ldRequestBuilder.filters(includeTags("lex-fcs"));
+                    // TODO: or should do a fall-through to test FCS 2.0 as well?
+                    break;
                 case CLARIN_FCS_2_0:
                     ldRequestBuilder.filters(includeTags("clarin-fcs-2.0"));
                     break;
@@ -236,6 +247,32 @@ public class FCSEndpointTester {
                 /* $FALL-THROUGH$ */
             default:
                 throw new SRUClientException("Unable to auto-detect CLARIN-FCS version!");
+        }
+
+        if (profile == FCSTestProfile.CLARIN_FCS_2_0) {
+            logger.debug("Try to check for LexFCS support ...");
+
+            SRUClient client = new ClarinFCSClientBuilder()
+                    .setDefaultSRUVersion(SRUVersion.VERSION_2_0)
+                    .unknownDataViewAsString()
+                    .registerExtraResponseDataParser(new ClarinFCSEndpointDescriptionParser())
+                    .buildClient();
+
+            SRUExplainRequest request = new SRUExplainRequest(endpointURI);
+            request.setStrictMode(false);
+            request.setVersion(SRUVersion.VERSION_2_0);
+            request.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, ClarinFCSConstants.TRUE);
+            request.setParseRecordDataEnabled(true);
+
+            SRUExplainResponse response = client.explain(request);
+            ClarinFCSEndpointDescription ed = response.getFirstExtraResponseData(ClarinFCSEndpointDescription.class);
+            if (ed != null) {
+                if (ed.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH)) {
+                    logger.info("Found <{}> capability. Upgrading test profile.",
+                            FCSTestConstants.CAPABILITY_LEX_SEARCH);
+                    profile = FCSTestProfile.LEX_FCS;
+                }
+            }
         }
 
         return profile;
