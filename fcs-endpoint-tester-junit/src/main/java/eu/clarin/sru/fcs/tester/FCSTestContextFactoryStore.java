@@ -5,6 +5,9 @@ import java.util.Map;
 
 public final class FCSTestContextFactoryStore {
 
+    /**
+     * Mapping of factory id (UUID for test session) to factory instance.
+     */
     private static final Map<String, FCSTestContextFactory> factories = new HashMap<>();
 
     // ----------------------------------------------------------------------

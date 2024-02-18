@@ -115,7 +115,8 @@ public class FCSTestContext {
     // ----------------------------------------------------------------------
 
     @SuppressWarnings("deprecation")
-    protected SRUClientConfig buildSRUClientConfig() {
+    public static SRUClientConfig buildSRUClientConfig(FCSTestProfile profile, boolean strictMode,
+            CloseableHttpClient httpClient) {
         final SRUClientConfig.Builder builder = new SRUClientConfig.Builder();
 
         // SRU version
@@ -162,7 +163,7 @@ public class FCSTestContext {
     }
 
     public SRUClient getClient() {
-        return new SRUClient(buildSRUClientConfig());
+        return new SRUClient(buildSRUClientConfig(profile, strictMode, httpClient));
     }
 
     // ----------------------------------------------------------------------

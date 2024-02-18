@@ -27,25 +27,33 @@ public class FCSTestExecutionListener implements TestExecutionListener {
 
     protected LogCapturingAppender logRecorder;
     protected HttpRequestResponseRecordingInterceptor httpRequestResponseRecorder;
+    protected FCSEndpointTesterProgressListener progressListener;
 
     protected Map<String, FCSTestResult> results = new LinkedHashMap<>();
 
     public FCSTestExecutionListener(LogCapturingAppender logRecorder,
-            HttpRequestResponseRecordingInterceptor httpRequestResponseRecorder) {
+            HttpRequestResponseRecordingInterceptor httpRequestResponseRecorder,
+            FCSEndpointTesterProgressListener progressListener) {
         this.logRecorder = logRecorder;
         this.httpRequestResponseRecorder = httpRequestResponseRecorder;
+        this.progressListener = progressListener;
     }
 
     public FCSTestExecutionListener(LogCapturingAppender logRecorder) {
-        this(logRecorder, null);
+        this(logRecorder, null, null);
     }
 
     public FCSTestExecutionListener(HttpRequestResponseRecordingInterceptor httpRequestResponseRecorder) {
-        this(null, httpRequestResponseRecorder);
+        this(null, httpRequestResponseRecorder, null);
+    }
+
+    public FCSTestExecutionListener(HttpRequestResponseRecordingInterceptor httpRequestResponseRecorder,
+            FCSEndpointTesterProgressListener progressListener) {
+        this(null, httpRequestResponseRecorder, progressListener);
     }
 
     public FCSTestExecutionListener() {
-        this(null, null);
+        this(null, null, null);
     }
 
     // ----------------------------------------------------------------------
@@ -77,6 +85,10 @@ public class FCSTestExecutionListener implements TestExecutionListener {
                             testHttpRequestResponseInfos.size(), name);
                 }
             }
+
+            if (progressListener != null) {
+                progressListener.onTestStarted(testIdentifier.getUniqueId(), testIdentifier.getDisplayName());
+            }
         }
     }
 
@@ -93,6 +105,10 @@ public class FCSTestExecutionListener implements TestExecutionListener {
                     testExecutionResult);
             results.put(name, result);
 
+            if (progressListener != null) {
+                progressListener.onTestFinished(testIdentifier.getUniqueId(), testIdentifier.getDisplayName(), result);
+            }
+
             logger.info("test finished: {} {}", testIdentifier.getUniqueId(), testExecutionResult);
         }
     }
@@ -107,6 +123,10 @@ public class FCSTestExecutionListener implements TestExecutionListener {
                     testIdentifier.getDisplayName(), getExpectedAnnotationValue(testIdentifier), testLogs, testHttps,
                     reason);
             results.put(name, result);
+
+            if (progressListener != null) {
+                progressListener.onTestFinished(testIdentifier.getUniqueId(), testIdentifier.getDisplayName(), result);
+            }
 
             logger.info("test skipped: {} {}", testIdentifier.getUniqueId(), reason);
         }

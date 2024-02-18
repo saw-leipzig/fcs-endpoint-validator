@@ -44,6 +44,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
+import eu.clarin.sru.fcs.tester.FCSEndpointTesterProgressListener;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.tester.FCSEndpointValidationResponse;
 import eu.clarin.sru.fcs.tester.FCSTestConstants;
@@ -131,6 +132,11 @@ public class MainView extends VerticalLayout {
             request.setConnectTimeout(selConnectTimeout.getValue());
             request.setSocketTimeout(selSocketTimeout.getValue());
 
+            // NOTE: this is a bit weird/side-effecty
+            // we need to create a view but the listener is connected to it
+            FCSEndpointTesterProgressListener progressListener = setMainContentInProgress();
+            request.setProgressListener(progressListener);
+
             final UI ui = UI.getCurrent();
             try {
                 FCSEndpointTesterService.getInstance().evalute(request).thenAccept((response) -> {
@@ -158,8 +164,6 @@ public class MainView extends VerticalLayout {
                 // show error message
                 setMainContentError("An internal error occurred!", ex);
             }
-
-            setMainContentNoResults();
         });
 
         btnConfig.addClickListener(event -> {
@@ -176,6 +180,17 @@ public class MainView extends VerticalLayout {
     public void setMainContentNoResults() {
         mainContent.removeAll();
         mainContent.add(createNoResultsPlaceholder());
+    }
+
+    public FCSEndpointTesterProgressListener setMainContentInProgress() {
+        mainContent.removeAll();
+
+        ProgressView progressView = new ProgressView();
+        mainContent.add(progressView);
+        mainContent.setAlignSelf(Alignment.CENTER, progressView);
+
+        // our progress view is also the listener
+        return progressView;
     }
 
     public void setMainContentResults(FCSEndpointValidationResponse result) {

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.http.HttpResponse;
@@ -73,6 +74,7 @@ public class FCSEndpointTester {
         request.setBaseURI("https://fcs.data.saw-leipzig.de/lcc");
         request.setUserSearchTerm("test");
         request.setFCSTestProfile(FCSTestProfile.CLARIN_FCS_2_0);
+        // request.setPerformProbeRequest(false);
 
         FCSEndpointValidationResponse response = runValidation(request);
 
@@ -90,19 +92,31 @@ public class FCSEndpointTester {
         final boolean debug = true;
         final boolean runAllTests = false;
 
+        FCSEndpointTesterProgressListener progressListener = request.getProgressListener();
+
+        // TODO: notify listener with same request again?
+        Optional.ofNullable(progressListener).ifPresent(l -> l.onStarted(request));
+
         // initial check if endpoint is available
         if (request.isPerformProbeRequest()) {
             // will fail early if endpoint can't be reached!
+            Optional.ofNullable(progressListener).ifPresent(l -> l.onProgressMessage("Sending probe request"));
             performProbeRequest(request.getBaseURI());
             logger.debug("Endpoint at '{}' can be reached.", request.getBaseURI());
         }
 
         // if not supplied, try to fcs test detect profile
         if (request.getFCSTestProfile() == null) {
+            Optional.ofNullable(progressListener)
+                    .ifPresent(l -> l.onProgressMessage("Try to detect FCS Endpoint version"));
             logger.info("No endpoint version supplied, trying to detect ...");
             final FCSTestProfile detectedProfile = detectFCSEndpointVersion(request.getBaseURI());
             request.setFCSTestProfile(detectedProfile);
+            Optional.ofNullable(progressListener).ifPresent(l -> l.onProgressMessage(
+                    String.format("Auto-detected FCS Test Profile: %s", detectedProfile.toDisplayString())));
         }
+
+        Optional.ofNullable(progressListener).ifPresent(l -> l.onProgressMessage("Setup FCS Endpoint test session"));
 
         // capture request/response pairs
         HttpRequestResponseRecordingInterceptor httpReqRespRecorder = new HttpRequestResponseRecordingInterceptor();
@@ -114,6 +128,7 @@ public class FCSEndpointTester {
 
         // configure test context
         FCSTestContextFactory contextFactory = FCSTestContextFactory.newInstance();
+        // basic required test setting
         contextFactory.setFCSTestProfile(request.getFCSTestProfile());
         contextFactory.setStrictMode(request.isStrictMode());
         contextFactory.setIndentResponse(request.getIndentResponse());
@@ -184,7 +199,9 @@ public class FCSEndpointTester {
         SummaryGeneratingListener listener = new SummaryGeneratingListener();
 
         // to capture test logs, results etc.
-        FCSTestExecutionListener testExecListener = new FCSTestExecutionListener(httpReqRespRecorder);
+        FCSTestExecutionListener testExecListener = new FCSTestExecutionListener(httpReqRespRecorder, progressListener);
+
+        Optional.ofNullable(progressListener).ifPresent(l -> l.onProgressMessage("Run FCS Endpoint tests"));
 
         // run tests
         try (LauncherSession session = LauncherFactory.openSession()) {
@@ -217,7 +234,12 @@ public class FCSEndpointTester {
 
         Map<String, FCSTestResult> results = testExecListener.getResults();
         // TODO: check resource leakage for http request/response stuff?
-        return new FCSEndpointValidationResponse(request, results);
+
+        FCSEndpointValidationResponse response = new FCSEndpointValidationResponse(request, results);
+
+        Optional.ofNullable(progressListener).ifPresent(l -> l.onFinished(response));
+
+        return response;
     }
 
     private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {

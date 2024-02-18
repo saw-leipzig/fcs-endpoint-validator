@@ -1,3 +1,13 @@
 @import "theme-editor.css";
 
 /* ----------------------------------------------------------------------- */
+
+/* https://css-tricks.com/so-youd-like-to-animate-the-display-property/ */
+
+.hide-fadeaway {
+  transition: opacity 1000ms, visibility 500ms;
+  visibility: collapse;
+  opacity: 0;
+}
+
+/* ----------------------------------------------------------------------- */

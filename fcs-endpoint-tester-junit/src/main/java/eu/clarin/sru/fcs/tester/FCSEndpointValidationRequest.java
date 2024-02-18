@@ -11,6 +11,8 @@ public class FCSEndpointValidationRequest {
     private int socketTimeout = FCSTestHttpClientFactory.DEFAULT_SOCKET_TIMEOUT;
     private boolean performProbeRequest = true;
 
+    private FCSEndpointTesterProgressListener progressListener = null;
+
     private FCSTestProfile profile = null;
     private boolean strictMode = FCSTestContext.DEFAULT_STRICT_MODE;
     private int indentResponse = FCSTestContext.DEFAULT_INDENT_RESPONSE;
@@ -18,18 +20,7 @@ public class FCSEndpointValidationRequest {
 
     private String userSearchTerm;
 
-    // TODO: event listener
-
     // ----------------------------------------------------------------------
-
-    // ----------------------------------------------------------------------
-
-    public void setProperty(String key, Object value) {
-        if (properties == null) {
-            properties = new HashMap<String, Object>();
-        }
-        properties.put(key, value);
-    }
 
     public int getConnectTimeout() {
         return connectTimeout;
@@ -53,6 +44,16 @@ public class FCSEndpointValidationRequest {
 
     public void setPerformProbeRequest(boolean performProbeRequest) {
         this.performProbeRequest = performProbeRequest;
+    }
+
+    // ----------------------------------------------------------------------
+
+    public FCSEndpointTesterProgressListener getProgressListener() {
+        return progressListener;
+    }
+
+    public void setProgressListener(FCSEndpointTesterProgressListener progressListener) {
+        this.progressListener = progressListener;
     }
 
     public FCSTestProfile getFCSTestProfile() {
@@ -96,6 +97,13 @@ public class FCSEndpointValidationRequest {
     }
 
     // ----------------------------------------------------------------------
+
+    public void setProperty(String key, Object value) {
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
+        properties.put(key, value);
+    }
 
     public Object getProperty(String key) {
         return getProperty(key, null);
