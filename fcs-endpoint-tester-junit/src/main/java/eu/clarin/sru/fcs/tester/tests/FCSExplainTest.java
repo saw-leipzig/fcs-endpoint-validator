@@ -209,13 +209,11 @@ public class FCSExplainTest extends AbstractFCSTest {
 
     @Test
     @Order(1200)
-    @ClarinFCS20
     @LexFCS
     @DisplayName("Check for a valid FCS endpoint description with 'lex-search' capability")
     @Expected("Expecting exactly one valid FCS endpoint decription conforming to FCS 2.0 spec with a 'http://clarin.eu/fcs/capability/lex-search' capability.")
     void doExplainHasValidEndpointDescriptionInFCS20ForLexFCS(FCSTestContext context) throws SRUClientException {
-        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_2_0
-                || context.getFCSTestProfile() == FCSTestProfile.LEX_FCS, "Only checked for FCS 2.0.");
+        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.LEX_FCS, "Only checked for FCS 2.0.");
 
         SRUExplainRequest req = context.createExplainRequest();
         req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
