@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>eu.clarin.sru.fcs</groupId>
-  <artifactId>endpoint-tester-bom</artifactId>
+  <artifactId>endpoint-validator-bom</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>FCS SRU Endpoint Validator</name>
-  <description>SRU/FCS Endpoint tester using JUnit5.</description>
+  <description>SRU/FCS Endpoint Validator using JUnit5.</description>
   <organization>
     <name>Saxon Academy of Sciences and Humanities in Leipzig</name>
     <url>https://www.saw-leipzig.de/</url>
@@ -26,8 +26,8 @@
   </licenses>
 
   <modules>
-    <module>fcs-endpoint-tester-junit</module>
-    <module>fcs-endpoint-tester-ui</module>
+    <module>fcs-endpoint-validator-core</module>
+    <module>fcs-endpoint-validator-ui</module>
   </modules>
 
   <build>
