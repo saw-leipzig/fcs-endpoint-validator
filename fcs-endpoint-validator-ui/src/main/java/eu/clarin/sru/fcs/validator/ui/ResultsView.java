@@ -104,16 +104,25 @@ public class ResultsView extends VerticalLayout {
         // icoExlamation.setSize("var(--lumo-icon-size-s)");
         // txtTestResultSummary.getStyle().set("margin", "0");
 
-        Span txtTestResultCounts = new Span();
-        // txtTestResultCounts.getStyle().set("margin", "0");
-        txtTestResultCounts.add("Success: ");
-        txtTestResultCounts.add(Long.toString(result.getCountSuccess()));
-        txtTestResultCounts.add(", Warnings: ");
-        txtTestResultCounts.add(Long.toString(result.getCountWarning()));
-        txtTestResultCounts.add(", Errors: ");
-        txtTestResultCounts.add(Long.toString(result.getCountFailure()));
-        txtTestResultCounts.add(", Skipped: ");
-        txtTestResultCounts.add(Long.toString(result.getCountSkipped()));
+        Div txtTestResultCounts = new Div();
+        txtTestResultCounts.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.ROW,
+                LumoUtility.Gap.SMALL);
+
+        Span txtSuccess = new Span(String.format("Success: %s", result.getCountSuccess()));
+        txtSuccess.getElement().getThemeList().add("badge success");
+        txtTestResultCounts.add(txtSuccess);
+
+        Span txtWarnings = new Span(String.format("Warnings: %s", result.getCountWarning()));
+        txtWarnings.getElement().getThemeList().add("badge");
+        txtTestResultCounts.add(txtWarnings);
+
+        Span txtErrors = new Span(String.format("Errors: %s", result.getCountFailure()));
+        txtErrors.getElement().getThemeList().add("badge error");
+        txtTestResultCounts.add(txtErrors);
+
+        Span txtSkipped = new Span(String.format("Skipped: %s", result.getCountSkipped()));
+        txtSkipped.getElement().getThemeList().add("badge contrast");
+        txtTestResultCounts.add(txtSkipped);
 
         // Arrays.asList
         return List.of(txtResultsFor, txtTestResultSummary, txtTestResultCounts);
@@ -234,12 +243,22 @@ public class ResultsView extends VerticalLayout {
         AccordionPanel pnlResultDetail = new AccordionPanel();
         // border-bottom: solid 1px var(--lumo-contrast-10pct);
         Span pnlResultDetailSummary = new Span(); // h3 ?
-        pnlResultDetailSummary.add(createIconForTestStatus(result.getStatus()));
-        pnlResultDetailSummary.add(" [");
-        pnlResultDetailSummary.add(request.getFCSTestProfile().toDisplayString());
-        pnlResultDetailSummary.add("] ");
-        pnlResultDetailSummary.add(result.getCategory());
-        pnlResultDetailSummary.add(": ");
+
+        Icon iconStatus = createIconForTestStatus(result.getStatus());
+        iconStatus.getStyle().set("vertical-align", "bottom");
+        pnlResultDetailSummary.add(iconStatus);
+        pnlResultDetailSummary.add(" ");
+
+        Span badgeTestProfile = new Span(request.getFCSTestProfile().toDisplayString());
+        badgeTestProfile.getElement().getThemeList().add("badge contrast");
+        pnlResultDetailSummary.add(badgeTestProfile);
+        pnlResultDetailSummary.add(" ");
+
+        Span badgeCategory = new Span(result.getCategory());
+        badgeCategory.getElement().getThemeList().add("badge contrast");
+        pnlResultDetailSummary.add(badgeCategory);
+        pnlResultDetailSummary.add(" ");
+
         pnlResultDetailSummary.add(result.getName());
         pnlResultDetail.setSummary(pnlResultDetailSummary);
         pnlResultDetail.add(resultDetail);

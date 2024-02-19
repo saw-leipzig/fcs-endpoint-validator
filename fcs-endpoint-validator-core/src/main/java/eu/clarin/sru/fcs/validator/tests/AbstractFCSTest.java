@@ -29,16 +29,6 @@ import eu.clarin.sru.fcs.validator.FCSTestProfile;
 @ExtendWith(FCSTestLifecycleMethodExecutionExceptionHandler.class)
 public abstract class AbstractFCSTest {
 
-    // protected boolean isLegacyFCS(FCSTestContext context) {
-    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-engine/src/main/java/org/junit/jupiter/engine/extension/DisabledCondition.java
-    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Disabled.java
-    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Assumptions.java
-    //     // https://github.com/junit-team/junit5/blob/r5.10.2/junit-jupiter-api/src/main/java/org/junit/jupiter/api/Assertions.java
-    //     return false;
-    // }
-
-    // ----------------------------------------------------------------------
-
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("explain")
@@ -64,6 +54,7 @@ public abstract class AbstractFCSTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("clarin-fcs-legacy")
     public static @interface ClarinFCSLegacy {
+        public static final String name = "clarin-fcs-legacy";
         public static final FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_LEGACY;
     }
 
@@ -71,6 +62,7 @@ public abstract class AbstractFCSTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("clarin-fcs-1.0")
     public static @interface ClarinFCS10 {
+        public static final String name = "clarin-fcs-1.0";
         public static final FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_1_0;
     }
 
@@ -78,6 +70,7 @@ public abstract class AbstractFCSTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("clarin-fcs-2.0")
     public static @interface ClarinFCS20 {
+        public static final String name = "clarin-fcs-2.0";
         public static final FCSTestProfile profile = FCSTestProfile.CLARIN_FCS_2_0;
     }
 
@@ -85,6 +78,7 @@ public abstract class AbstractFCSTest {
     @Retention(RetentionPolicy.RUNTIME)
     @Tag("lex-fcs")
     public static @interface LexFCS {
+        public static final String name = "lex-fcs";
         public static final FCSTestProfile profile = FCSTestProfile.LEX_FCS;
     }
 
@@ -104,7 +98,7 @@ public abstract class AbstractFCSTest {
     public static @interface ClarinFCSAnyOld {
     }
 
-    @Target({ ElementType.TYPE })
+    @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
     public static @interface Category {
         String value();

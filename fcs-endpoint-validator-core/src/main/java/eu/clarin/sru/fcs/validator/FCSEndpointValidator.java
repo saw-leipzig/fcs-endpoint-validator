@@ -48,6 +48,10 @@ import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector.Autod
 import eu.clarin.sru.fcs.validator.tests.FCSExplainTest;
 import eu.clarin.sru.fcs.validator.tests.FCSScanTest;
 import eu.clarin.sru.fcs.validator.tests.FCSSearchTest;
+import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCS10;
+import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCS20;
+import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCSLegacy;
+import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.LexFCS;
 
 public class FCSEndpointValidator {
     protected static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidator.class);
@@ -158,17 +162,17 @@ public class FCSEndpointValidator {
             // filter test classes based on clarin fcs version test profile annotation
             switch (request.getFCSTestProfile()) {
                 case LEX_FCS:
-                    ldRequestBuilder.filters(includeTags("lex-fcs"));
+                    ldRequestBuilder.filters(includeTags(LexFCS.name));
                     // TODO: or should do a fall-through to test FCS 2.0 as well?
                     break;
                 case CLARIN_FCS_2_0:
-                    ldRequestBuilder.filters(includeTags("clarin-fcs-2.0"));
+                    ldRequestBuilder.filters(includeTags(ClarinFCS20.name));
                     break;
                 case CLARIN_FCS_1_0:
-                    ldRequestBuilder.filters(includeTags("clarin-fcs-1.0"));
+                    ldRequestBuilder.filters(includeTags(ClarinFCS10.name));
                     break;
                 case CLARIN_FCS_LEGACY:
-                    ldRequestBuilder.filters(includeTags("clarin-fcs-legacy"));
+                    ldRequestBuilder.filters(includeTags(ClarinFCSLegacy.name));
                     break;
                 default:
                     break;
@@ -183,7 +187,7 @@ public class FCSEndpointValidator {
                 // (might not be guaranteed if running concurrently)
                 .configurationParameter("junit.jupiter.testmethod.order.default",
                         "org.junit.jupiter.api.MethodOrderer$OrderAnnotation")
-                .configurationParameter("junit.jupiter.testclass.order.default ",
+                .configurationParameter("junit.jupiter.testclass.order.default",
                         "org.junit.jupiter.api.ClassOrderer$OrderAnnotation");
 
         if (parallel) {

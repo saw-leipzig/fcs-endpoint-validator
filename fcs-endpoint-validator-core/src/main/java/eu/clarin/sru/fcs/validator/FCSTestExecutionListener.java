@@ -204,12 +204,21 @@ public class FCSTestExecutionListener implements TestExecutionListener {
             return null;
         }
         MethodSource mSource = (MethodSource) source;
+        
+        // check if on method
+        Method method = mSource.getJavaMethod();
+        Category category = method.getAnnotation(Category.class);
+        if (category != null) {
+            return category.value();
+        }
+
+        // default to class
         Class<?> clazz = mSource.getJavaClass();
         Optional<Category> maybeCategory = AnnotationUtils.findAnnotation(clazz, Category.class, false);
         if (!maybeCategory.isPresent()) {
             return null;
         }
-        Category category = maybeCategory.get();
+        category = maybeCategory.get();
         return category.value();
     }
 

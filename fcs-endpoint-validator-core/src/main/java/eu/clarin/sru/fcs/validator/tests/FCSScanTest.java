@@ -72,6 +72,8 @@ public class FCSScanTest extends AbstractFCSTest {
         assertEquals(1, res.getTermsCount(), "Endpoint did not honor 'maximumTerms' argument");
     }
 
+    // ----------------------------------------------------------------------
+
     @Test
     @Order(2040)
     @ClarinFCSAny
