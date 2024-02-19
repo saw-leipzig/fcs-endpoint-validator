@@ -45,8 +45,10 @@ import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector;
 import eu.clarin.sru.client.fcs.utils.ClarinFCSEndpointVersionAutodetector.AutodetectedFCSVersion;
+import eu.clarin.sru.fcs.validator.tests.FCSExplainLexicalTest;
 import eu.clarin.sru.fcs.validator.tests.FCSExplainTest;
 import eu.clarin.sru.fcs.validator.tests.FCSScanTest;
+import eu.clarin.sru.fcs.validator.tests.FCSSearchLexicalTest;
 import eu.clarin.sru.fcs.validator.tests.FCSSearchTest;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCS10;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCS20;
@@ -150,12 +152,13 @@ public class FCSEndpointValidator {
         ldRequestBuilder
                 // what test classes to run
                 .selectors(selectPackage("eu.clarin.sru.fcs.validator.tests"))
-                // this does not really seem to work
+                // this does not really seem to work with SpringBoot ...
                 // .selectors(selectPackage(AbstractFCSTest.class.getPackageName()))
                 // this works in SpringBoot with its different dependency/classpath structure
                 // but is not really too flexible
                 .selectors(selectClass(FCSExplainTest.class), selectClass(FCSScanTest.class),
                         selectClass(FCSSearchTest.class))
+                .selectors(selectClass(FCSExplainLexicalTest.class), selectClass(FCSSearchLexicalTest.class))
                 .filters(includeClassNamePatterns(".*Test"));
 
         if (!runAllTests && request.getFCSTestProfile() != null) {
