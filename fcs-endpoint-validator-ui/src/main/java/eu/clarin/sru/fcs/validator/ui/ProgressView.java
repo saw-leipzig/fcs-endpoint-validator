@@ -31,6 +31,9 @@ public class ProgressView extends VerticalLayout implements FCSEndpointValidator
     ProgressBar prgbr;
     Div prgList;
 
+    long maximumNumberOfTest = -1;
+    long numberOfTestsRun = 0;
+
     public ProgressView() {
         ui = UI.getCurrent();
 
@@ -86,6 +89,27 @@ public class ProgressView extends VerticalLayout implements FCSEndpointValidator
     }
 
     // ----------------------------------------------------------------------
+
+    @Override
+    public void setNumberOfTests(long numTests) {
+        maximumNumberOfTest = numTests;
+
+        ui.access(() -> {
+            prgbr.setMin(0);
+            prgbr.setMax(maximumNumberOfTest);
+            prgbr.setValue(numberOfTestsRun);
+            prgbr.setIndeterminate(false);
+        });
+    }
+
+    public void incrementProgress() {
+        numberOfTestsRun++;
+        ui.access(() -> {
+            if (maximumNumberOfTest >= 0) {
+                prgbr.setValue(numberOfTestsRun);
+            }
+        });
+    }
 
     private void addMessage(Component message) {
         ui.access(() -> {
@@ -144,6 +168,7 @@ public class ProgressView extends VerticalLayout implements FCSEndpointValidator
         msg.add(" ...");
 
         addMessage(msg);
+        incrementProgress();
     }
 
     /*

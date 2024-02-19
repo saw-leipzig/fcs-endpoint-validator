@@ -13,6 +13,11 @@ public interface FCSEndpointValidatorProgressListener {
 
     // ----------------------------------------------------------------------
 
+    public default void setNumberOfTests(long numTests) {
+    }
+
+    // ----------------------------------------------------------------------
+
     public default void onProgressMessage(String message) {
     }
 

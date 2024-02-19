@@ -220,10 +220,11 @@ public class FCSEndpointValidator {
             // Discover tests and build a test plan
             TestPlan testPlan = launcher.discover(ldRequest);
 
+            long numberOfTests = testPlan.countTestIdentifiers(testIdentifier -> testIdentifier.isTest());
+            Optional.ofNullable(progressListener).ifPresent(l -> l.setNumberOfTests(numberOfTests));
+
             // Execute test plan
             launcher.execute(testPlan);
-            // Alternatively, execute the request directly
-            // launcher.execute(ldRequest);
         }
 
         if (debug) {
