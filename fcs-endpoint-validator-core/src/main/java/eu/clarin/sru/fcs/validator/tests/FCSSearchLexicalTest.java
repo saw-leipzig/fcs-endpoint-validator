@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.List;
@@ -46,6 +47,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
 
     // TODO: supply via context, maybe make repeatable and change?
     private final String randomSearchTerm = RandomStringUtils.randomAlphanumeric(16);
+    private final String randomCQLModifier = RandomStringUtils.randomAlphabetic(8);
     private final String unicodeSearchTerm = "öäüÖÄÜß€";
 
     private static ClarinFCSEndpointDescription endpointDescription;
@@ -74,14 +76,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     @DisplayName("Search for random string with LexCQL")
     @Expected("No errors or diagnostics (and zero or more records)")
     void doRandomLexCQLSearch(FCSTestContext context) throws SRUClientException {
-        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.LEX_FCS, "Only checked for LexFCS (FCS 2.0).");
-        assumeTrue(endpointDescription != null, "Endpoint did not supply a valid Endpoint Description?");
-
-        // do we support ADV search?
-        boolean supportsLex = endpointDescription.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH);
-        assumeTrue(supportsLex, "Endpoint claims no support for Lex Search");
-
-        // ----------------------------------------------
+        assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, escapeCQL(getRandomSearchTerm()));
@@ -96,14 +91,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
             + FCS_RECORD_SCHEMA + "'")
     @Expected("Expecting at least one record in CLARIN-FCS record schema (without any surrogate diagnostics)")
     void doLexFCSSearchAndRequestRecordSchema(FCSTestContext context) throws SRUClientException {
-        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.LEX_FCS, "Only checked for LexFCS (FCS 2.0).");
-        assumeTrue(endpointDescription != null, "Endpoint did not supply a valid Endpoint Description?");
-
-        // do we support ADV search?
-        boolean supportsLex = endpointDescription.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH);
-        assumeTrue(supportsLex, "Endpoint claims no support for Lex Search");
-
-        // ----------------------------------------------
+        assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
         req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, escapeCQL(context.getUserSearchTerm()));
@@ -175,16 +163,255 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         }
     }
 
-    // TODO: more with different lex operators
-    // lemma = word
-    // lemma = "word"
-    // lemma = "word" OR lemma = word
-    // lemma = "word" AND lemma = word
-    // pos = random
-    // def = random
-    // senseRef = random
+    // ----------------------------------------------------------------------
+
+    @Test
+    @Order(5030)
+    @LexFCS
+    @DisplayName("Search for random string with LexCQL 'lemma = \"<random string>\"'")
+    @Expected("No errors or diagnostics (and zero or more records)")
+    void doRandomLexCQLSearchWithLemma(FCSTestContext context) throws SRUClientException {
+        assumeLexSearch(context);
+
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("lemma = \"%s\"", getRandomSearchTerm()));
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+    }
+
+    @Test
+    @Order(5035)
+    @LexFCS
+    @DisplayName("Search for random string with LexCQL 'lemma = <random string>'")
+    @Expected("No errors or diagnostics (and zero or more records)")
+    void doRandomLexCQLSearchWithLemmaUnquoted(FCSTestContext context) throws SRUClientException {
+        assumeLexSearch(context);
+
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("lemma = %s", getRandomSearchTerm()));
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+    }
 
     // ----------------------------------------------------------------------
+    // support for boolean operators
+
+    @Test
+    @Order(5100)
+    @LexFCS
+    @DisplayName("Search for \"<random string>\" 'OR' \"<random string>\" with LexFCS to test 'OR' boolean operator support")
+    @Expected("No errors but an optional diagnostic if the 'OR' boolean operator is not supported (and zero or more records)")
+    void doLexFCSSearchWithBoolOr(FCSTestContext context) throws SRUClientException {
+        assumeLexSearch(context);
+
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX,
+                String.format("\"%s\" OR \"%s\"", getRandomSearchTerm(), getRandomSearchTerm()));
+        req.setMaximumRecords(5);
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+
+        String diag_query_syntax = "info:srw/diagnostic/1/10";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_query_syntax),
+                String.format("Endpoint failed to parse query with 'Query syntax error': %s", diag_query_syntax));
+
+        // only valid for ADV search
+        // @formatter:off
+        // String diag_query_syntax_clarin = "http://clarin.eu/fcs/diagnostic/10";
+        // String diag_query_syntax_clarin2 = "http://clarin.eu/fcs/diagnostic/11";
+        // String diag_query_syntax_clarin3 = "http://clarin.eu/fcs/diagnostic/14";
+        // assertFalse(hasDiagnostic(res.getDiagnostics(), diag_query_syntax_clarin),
+        //         String.format(
+        //                 "Endpoint failed to parse query with CLARIN FCS diagnostic 'General query syntax error': %s",
+        //                 diag_query_syntax_clarin));
+        // @formatter:on
+
+        String diag_unsupported_bool = "info:srw/diagnostic/1/37";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_unsupported_bool),
+                String.format("Endpoint indicates 'Unsupported boolean operator': %s", diag_unsupported_bool));
+
+        // this is a bit of a stretch?
+        String diag_toomany_bool = "info:srw/diagnostic/1/38";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_toomany_bool),
+                String.format("Endpoint indicates 'Too many boolean operators in query': %s", diag_toomany_bool));
+
+        // probably not the best diagnostic to use here
+        String diag_feature_unsupported = "info:srw/diagnostic/1/48";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_feature_unsupported),
+                String.format("Endpoint indicates 'Query feature unsupported': %s", diag_feature_unsupported));
+
+        // probably not the best diagnostic to use here
+        String diag_processquery_error = "info:srw/diagnostic/1/48";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_processquery_error),
+                String.format("Endpoint indicates 'Cannot process query; reason unknown': %s",
+                        diag_processquery_error));
+
+        // otherwise assume no diagnostics?
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+    }
+
+    @Test
+    @Order(5110)
+    @LexFCS
+    @DisplayName("Search for \"<random string>\" 'AND' \"<random string>\" with LexFCS to test 'AND' boolean operator support")
+    @Expected("No errors but an optional diagnostic if the 'AND' boolean operator is not supported (and zero or more records)")
+    void doLexFCSSearchWithBoolAnd(FCSTestContext context) throws SRUClientException {
+        assumeLexSearch(context);
+
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX,
+                String.format("\"%s\" AND \"%s\"", getRandomSearchTerm(), getRandomSearchTerm()));
+        req.setMaximumRecords(5);
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+
+        String diag_query_syntax = "info:srw/diagnostic/1/10";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_query_syntax),
+                String.format("Endpoint failed to parse query with 'Query syntax error': %s", diag_query_syntax));
+
+        String diag_unsupported_bool = "info:srw/diagnostic/1/37";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_unsupported_bool),
+                String.format("Endpoint indicates 'Unsupported boolean operator': %s", diag_unsupported_bool));
+
+        // this is a bit of a stretch?
+        String diag_toomany_bool = "info:srw/diagnostic/1/38";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_toomany_bool),
+                String.format("Endpoint indicates 'Too many boolean operators in query': %s", diag_toomany_bool));
+
+        // probably not the best diagnostic to use here
+        String diag_feature_unsupported = "info:srw/diagnostic/1/48";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_feature_unsupported),
+                String.format("Endpoint indicates 'Query feature unsupported': %s", diag_feature_unsupported));
+
+        // probably not the best diagnostic to use here
+        String diag_processquery_error = "info:srw/diagnostic/1/48";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_processquery_error),
+                String.format("Endpoint indicates 'Cannot process query; reason unknown': %s",
+                        diag_processquery_error));
+
+        // otherwise assume no diagnostics?
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+    }
+
+    // TODO: brackets?
+    // - ( lemma = "word" )
+    // - lemma = word OR ( lemma = "word" )
+    // - lemma = word OR ( lemma = "word" AND lemma = word )
+    // TODO: lemma = /xyzMODIFIER "word"
+
+    // ----------------------------------------------------------------------
+    // support for pos/def/senseRef fields
+    // TODO: xr$... fields ? (xr$synonymy, xr$hyponymy, xr$hypernymy, xr$meronymy, xr$antonymy)
+
+    @Test
+    @Order(5200)
+    @LexFCS
+    @DisplayName("Search for random string with LexCQL 'pos = \"<random string>\"'")
+    @Expected("No errors but maybe a diagnostic if not supported (and zero or more records)")
+    void doLexFCSSearchWithPosField(FCSTestContext context) throws SRUClientException {
+        assumeLexSearch(context);
+
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("pos = \"%s\"", getRandomSearchTerm()));
+        req.setMaximumRecords(5);
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+
+        String diag_query_syntax = "info:srw/diagnostic/1/10";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_query_syntax),
+                String.format("Endpoint failed to parse query with 'Query syntax error': %s", diag_query_syntax));
+
+        // TODO: what diagnostic should be used here?
+        String diag_feature_unsupported = "info:srw/diagnostic/1/48";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_feature_unsupported),
+                String.format("Endpoint indicates 'Query feature unsupported': %s", diag_feature_unsupported));
+
+        // probably not the best diagnostic to use here
+        String diag_processquery_error = "info:srw/diagnostic/1/48";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_processquery_error),
+                String.format("Endpoint indicates 'Cannot process query; reason unknown': %s",
+                        diag_processquery_error));
+
+        // otherwise assume no diagnostics?
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+    }
+
+    @Test
+    @Order(5210)
+    @LexFCS
+    @DisplayName("Search for random string with LexCQL 'def = \"<random string>\"'")
+    @Expected("No errors but maybe a diagnostic if not supported (and zero or more records)")
+    void doLexFCSSearchWithDefField(FCSTestContext context) throws SRUClientException {
+        assumeLexSearch(context);
+
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("def = \"%s\"", getRandomSearchTerm()));
+        req.setMaximumRecords(5);
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+
+        String diag_query_syntax = "info:srw/diagnostic/1/10";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_query_syntax),
+                String.format("Endpoint failed to parse query with 'Query syntax error': %s", diag_query_syntax));
+
+        // TODO: what diagnostic should be used here?
+        String diag_feature_unsupported = "info:srw/diagnostic/1/48";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_feature_unsupported),
+                String.format("Endpoint indicates 'Query feature unsupported': %s", diag_feature_unsupported));
+
+        // probably not the best diagnostic to use here
+        String diag_processquery_error = "info:srw/diagnostic/1/48";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_processquery_error),
+                String.format("Endpoint indicates 'Cannot process query; reason unknown': %s",
+                        diag_processquery_error));
+
+        // otherwise assume no diagnostics?
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+    }
+
+    @Test
+    @Order(5230)
+    @LexFCS
+    @DisplayName("Search for random string with LexCQL 'senseRef = \"<random string>\"'")
+    @Expected("No errors but maybe a diagnostic if not supported (and zero or more records)")
+    void doLexFCSSearchWithSenseRefField(FCSTestContext context) throws SRUClientException {
+        assumeLexSearch(context);
+
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("senseRef = \"%s\"", getRandomSearchTerm()));
+        req.setMaximumRecords(5);
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+
+        String diag_query_syntax = "info:srw/diagnostic/1/10";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_query_syntax),
+                String.format("Endpoint failed to parse query with 'Query syntax error': %s", diag_query_syntax));
+
+        // TODO: what diagnostic should be used here?
+        String diag_feature_unsupported = "info:srw/diagnostic/1/48";
+        assumeFalse(hasDiagnostic(res.getDiagnostics(), diag_feature_unsupported),
+                String.format("Endpoint indicates 'Query feature unsupported': %s", diag_feature_unsupported));
+
+        // probably not the best diagnostic to use here
+        String diag_processquery_error = "info:srw/diagnostic/1/48";
+        assertFalse(hasDiagnostic(res.getDiagnostics(), diag_processquery_error),
+                String.format("Endpoint indicates 'Cannot process query; reason unknown': %s",
+                        diag_processquery_error));
+
+        // otherwise assume no diagnostics?
+        assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
+    }
+
+    // ----------------------------------------------------------------------
+    
+    // TODO: check for optional Hits-annotation types
+    // lex-lemma / lex-pos / les-def
+
+    // ----------------------------------------------------------------------
+
+    protected void assumeLexSearch(FCSTestContext context) {
+        assumeTrue(context.getFCSTestProfile() == FCSTestProfile.LEX_FCS, "Only checked for LexFCS (FCS 2.0).");
+        assumeTrue(endpointDescription != null, "Endpoint did not supply a valid Endpoint Description?");
+
+        // do we support ADV search?
+        boolean supportsLex = endpointDescription.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH);
+        assumeTrue(supportsLex, "Endpoint claims no support for Lex Search");
+    }
 
     protected String escapeCQL(String q) {
         if (q.contains(" ")) {
@@ -196,6 +423,10 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
 
     protected String getRandomSearchTerm() {
         return randomSearchTerm;
+    }
+
+    protected String getRandomCQLModifier() {
+        return randomCQLModifier;
     }
 
     public String getUnicodeSearchTerm() {
