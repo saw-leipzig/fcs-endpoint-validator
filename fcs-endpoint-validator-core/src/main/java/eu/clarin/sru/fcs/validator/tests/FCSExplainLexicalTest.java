@@ -29,6 +29,9 @@ import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.Explain;
 @DisplayName("Explain (Lexical)")
 public class FCSExplainLexicalTest extends AbstractFCSTest {
 
+    // ----------------------------------------------------------------------
+    // LexFCS: EndpointDescription
+
     @Test
     @Order(1510)
     @LexFCS

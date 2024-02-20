@@ -54,6 +54,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     private static ClarinFCSEndpointDescription endpointDescription;
 
     // ----------------------------------------------------------------------
+    // EndpointDescription for all tests
 
     @BeforeAll
     static void fetchEndpointDescription(FCSTestContext context) throws SRUClientException {
@@ -70,6 +71,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // FCS: random searches
 
     @Test
     @Order(3000)
@@ -98,6 +100,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // SRU: invalid parameters usage, CQL
 
     @Test
     @Order(3030)
@@ -205,6 +208,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // SRU: UTF-8 support
 
     @Test
     @Order(3200)
@@ -217,6 +221,9 @@ public class FCSSearchTest extends AbstractFCSTest {
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
         assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
+
+    // ----------------------------------------------------------------------
+    // SRU/FCS: search with user input for known results
 
     @Test
     @Order(3600)
@@ -480,7 +487,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     // TODO: validate CQL search
     // - search term appears in search results
     // - [warning] check if result set deterministic
-    //   -> (requests for 1. 1-5, 2. 2-5, 3. 6-10)
+    // -> (requests for 1. 1-5, 2. 2-5, 3. 6-10)
 
     // TODO: split into multiple search tests
     // - sru/cql

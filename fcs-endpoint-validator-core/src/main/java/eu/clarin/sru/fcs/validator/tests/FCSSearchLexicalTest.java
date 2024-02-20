@@ -53,6 +53,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     private static ClarinFCSEndpointDescription endpointDescription;
 
     // ----------------------------------------------------------------------
+    // EndpointDescription for all tests
 
     @BeforeAll
     static void fetchEndpointDescription(FCSTestContext context) throws SRUClientException {
@@ -69,6 +70,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // LexFCS: valid searches
 
     @Test
     @Order(5010)
@@ -164,6 +166,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // LexFCS: check quoting support (query terms with spaces)
 
     @Test
     @Order(5030)
@@ -194,7 +197,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
-    // support for boolean operators
+    // LexFCS: check support for boolean operators / more complex queries
 
     @Test
     @Order(5100)
@@ -298,8 +301,9 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     // TODO: lemma = /xyzMODIFIER "word"
 
     // ----------------------------------------------------------------------
-    // support for pos/def/senseRef fields
-    // TODO: xr$... fields ? (xr$synonymy, xr$hyponymy, xr$hypernymy, xr$meronymy, xr$antonymy)
+    // LexFCS: check support for other indexes/fields like pos/def/senseRef
+    // TODO: xr$... fields ? (xr$synonymy, xr$hyponymy, xr$hypernymy, xr$meronymy,
+    // xr$antonymy)
 
     @Test
     @Order(5200)
@@ -398,7 +402,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
-    
+
     // TODO: check for optional Hits-annotation types
     // lex-lemma / lex-pos / les-def
 

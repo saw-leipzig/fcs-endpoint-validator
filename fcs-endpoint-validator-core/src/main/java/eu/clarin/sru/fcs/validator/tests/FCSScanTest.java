@@ -20,6 +20,9 @@ import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.Scan;
 @DisplayName("Scan")
 public class FCSScanTest extends AbstractFCSTest {
 
+    // ----------------------------------------------------------------------
+    // SRU: invalid scan
+
     @Test
     @Order(2000)
     @ClarinFCSLegacy
@@ -33,6 +36,9 @@ public class FCSScanTest extends AbstractFCSTest {
         SRUScanResponse res = context.getClient().scan(req);
         assertHasDiagnostic(res, "info:srw/diagnostic/1/7");
     }
+
+    // ----------------------------------------------------------------------
+    // SRU: valid scan
 
     @Test
     @Order(2010)
@@ -73,6 +79,7 @@ public class FCSScanTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // SRU: invalid scan (for any SRU/FCS version)
 
     @Test
     @Order(2040)

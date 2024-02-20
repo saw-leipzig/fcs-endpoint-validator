@@ -29,6 +29,9 @@ import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.Explain;
 @DisplayName("Explain")
 public class FCSExplainTest extends AbstractFCSTest {
 
+    // ----------------------------------------------------------------------
+    // SRU: default explain response on base URI
+
     @Test
     @Order(1000)
     @ClarinFCSAny
@@ -41,6 +44,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // SRU: invalid parameter usage
 
     @Test
     @Order(1010)
@@ -109,6 +113,7 @@ public class FCSExplainTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // FCS: EndpointDescription SRU:recordData
 
     @Test
     @Order(1100)
