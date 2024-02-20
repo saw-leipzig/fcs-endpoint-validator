@@ -253,6 +253,10 @@ public class FCSEndpointValidator {
     private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
         final ClarinFCSEndpointVersionAutodetector versionAutodetector = new ClarinFCSEndpointVersionAutodetector();
 
+        // TODO: update to first check FCS 2.0, then FCS 1.0 / legacy
+        // TODO: catch exceptions and only rethrow if no version could be detected
+        // (e.g. for newer endpoints not support FCS 1.0/SRU 1.2)
+
         AutodetectedFCSVersion version = null;
         try {
             version = versionAutodetector.autodetectVersion(endpointURI);
