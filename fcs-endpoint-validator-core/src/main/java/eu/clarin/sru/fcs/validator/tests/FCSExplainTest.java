@@ -5,9 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
@@ -18,11 +22,13 @@ import eu.clarin.sru.client.SRUExplainRequest;
 import eu.clarin.sru.client.SRUExplainResponse;
 import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.fcs.validator.FCSTestContext;
 import eu.clarin.sru.fcs.validator.FCSTestProfile;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.Explain;
+import eu.clarin.sru.fcs.validator.util.LanguagesISO693;
 
 @Order(1000)
 @Explain
@@ -213,6 +219,55 @@ public class FCSExplainTest extends AbstractFCSTest {
                     "Capabilites indicate support for Advanced Search, so Endpoint must supported layers");
         }
 
+    }
+
+    // ----------------------------------------------------------------------
+    // FCS: valid language codes in EndpointDescription > Resources
+
+    @Test
+    @Order(1300)
+    @ClarinFCS10
+    @ClarinFCS20
+    @LexFCS
+    @DisplayName("Check for valid ISO639-3 language codes in <Resource> in FCS endpoint description")
+    @Expected("Expecting valid FCS endpoint description with all Resource elements having valid ISO639-3 language codes.")
+    void doExplainResourcesHaveValidLanguageCodes(FCSTestContext context) throws SRUClientException {
+        assumeFalse(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY,
+                "Legacy FCS does not have an endpoint description");
+
+        SRUExplainRequest req = context.createExplainRequest();
+        req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
+        SRUExplainResponse res = context.getClient().explain(req);
+
+        // common sanity checks
+        List<ClarinFCSEndpointDescription> descs = res.getExtraResponseData(ClarinFCSEndpointDescription.class);
+        assertNotNull(descs, "Endpoint did not return a CLARIN FCS endpoint description");
+        assertEquals(1, descs.size(), "Endpoint must only return one instance of a CLARIN FCS endpoint description");
+        ClarinFCSEndpointDescription desc = descs.get(0);
+
+        // validate FCS Endpoint Description Resource elements
+        assertValidLanguageCodesForResourcesRecursive(desc.getResources());
+    }
+
+    private void assertValidLanguageCodesForResourcesRecursive(List<ResourceInfo> resources) {
+        if (resources == null) {
+            return;
+        }
+
+        LanguagesISO693 iso639 = LanguagesISO693.getInstance();
+        for (ResourceInfo resource : resources) {
+            assertNotEquals(0, resource.getLanguages().size(), "Languages list must not be empty!");
+
+            List<String> invalidLanguages = resource.getLanguages().stream().filter(Predicate.not(iso639::isCode_3))
+                    .collect(Collectors.toList());
+            if (!invalidLanguages.isEmpty()) {
+                fail(String.format(
+                        "Resource must not contain invalid ISO639-3 language code. Expected none but found unknown codes: %s.",
+                        invalidLanguages.stream().collect(Collectors.joining("\", \"", "\"", "\""))));
+            }
+
+            assertValidLanguageCodesForResourcesRecursive(resource.getSubResources());
+        }
     }
 
 }
