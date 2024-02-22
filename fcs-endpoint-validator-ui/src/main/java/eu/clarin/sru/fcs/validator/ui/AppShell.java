@@ -7,18 +7,15 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.component.page.Push;
-import com.vaadin.flow.server.PWA;
+import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.theme.Theme;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * This class is used to configure the generated html host page used by the app
  */
-@PWA(name = "FCS SRU Endpoint Validator", shortName = "FCS SRU Endpoint Validator")
 @SpringBootApplication
 @ServletComponentScan
 @Push
-// @EnableAsync
 @Theme(value = "fcs-endpoint-validator") // variant=Lumo.DARK
 public class AppShell implements AppShellConfigurator {
 
@@ -43,6 +40,26 @@ public class AppShell implements AppShellConfigurator {
         // String name = AbstractFCSTest.class.getPackageName();
         // org.slf4j.LoggerFactory.getLogger(AppShellConfigurator.class.getName()).info("test package: {}", name);
         // @formatter:on
+    }
+
+    @Override
+    public void configurePage(AppShellSettings settings) {
+        // set favicon
+        // NOTE: if @PWA used, it creates lots of default icons ...
+        settings.addFavIcon("icon", "themes/fcs-endpoint-validator/images/favicon.ico", "32x32");
+        settings.addLink("shortcut icon", "themes/fcs-endpoint-validator/images/favicon.ico");
+
+        // metadata
+        settings.addMetaTag("author", "Erik Körner");
+        settings.addMetaTag("author", "Sächsische Akademie der Wissenschaften zu Leipzig");
+        settings.addMetaTag("description", "An FCS SRU Endpoint Validator to check protocol conformity of"
+                + " Federated Search Content Endpoint Implementations by testing responses for given request URLs.");
+        settings.addMetaTag("keywords", "FCS, SRU, Endpoint, Validator, Federated Content Search, FCS Endpoint");
+
+        // crawler settings
+        settings.addMetaTag("robots", "index,nofollow");
+
+        settings.setPageTitle("FCS SRU Endpoint Validator");
     }
 
     public static void main(String[] args) {

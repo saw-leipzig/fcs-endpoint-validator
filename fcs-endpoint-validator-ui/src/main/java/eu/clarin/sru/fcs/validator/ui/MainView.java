@@ -26,6 +26,7 @@ import com.vaadin.flow.component.html.AnchorTarget;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Pre;
 import com.vaadin.flow.component.html.Span;
@@ -222,6 +223,11 @@ public class MainView extends VerticalLayout {
         lblTitle.setWidth("max-content");
         lblTitle.getStyle().set("font-size", "var(--lumo-font-size-xxl)");
         titleRow.add(lblTitle);
+
+        Image imgLogo = new Image("themes/fcs-endpoint-validator/images/logo-saw.png", "Logo SAW");
+        imgLogo.setHeight("35px"); // based on H1; var(--lumo-icon-size-l) ?
+        imgLogo.addClassName(LumoUtility.Margin.Left.AUTO);
+        titleRow.add(imgLogo);
 
         return titleRow;
     }
