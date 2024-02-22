@@ -10,9 +10,11 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -222,10 +224,95 @@ public class FCSExplainTest extends AbstractFCSTest {
     }
 
     // ----------------------------------------------------------------------
+    // FCS: mandatory en/eng localized strings for resources (title, description,
+    // institution)
+    // NOTE: this is already check when parsing the EndpointDescription but only
+    // logged as warning
+
+    @Test
+    // @Disabled
+    @Order(1300)
+    @ClarinFCS10
+    @ClarinFCS20
+    @LexFCS
+    @DisplayName("Check for a required english localized strings in FCS endpoint description")
+    @Expected("Expecting exactly one valid FCS endpoint decription conforming to FCS 2.0 spec (All resources should have at least on string with 'en'/'eng' 'xml:lang' tag.)")
+    void doExplainHasValidEnglishLocalizedResourceStringsInEndpointDescription(FCSTestContext context)
+            throws SRUClientException {
+        assumeFalse(context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY,
+                "Legacy FCS does not have an endpoint description");
+
+        SRUExplainRequest req = context.createExplainRequest();
+        req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
+        SRUExplainResponse res = context.getClient().explain(req);
+
+        // common sanity checks
+        List<ClarinFCSEndpointDescription> descs = res.getExtraResponseData(ClarinFCSEndpointDescription.class);
+        assertNotNull(descs, "Endpoint did not return a CLARIN FCS endpoint description");
+        assertEquals(1, descs.size(),
+                "Endpoint must only return one instance of a CLARIN FCS endpoint description");
+        ClarinFCSEndpointDescription desc = descs.get(0);
+
+        // validate FCS Endpoint Description Resource elements
+        assertHasEnglishStringsInResourcesRecursive(desc.getResources(), context.isStrictMode());
+    }
+
+    private void assertHasEnglishStringsInResourcesRecursive(List<ResourceInfo> resources, boolean strict) {
+        if (resources == null) {
+            return;
+        }
+
+        // do we only allow two letter codes (ISO639-1) or also three letter codes
+        // (ISO639-2/3)?
+        // https://www.loc.gov/standards/iso639-2/faq.html#1
+        // xml:lang --> ISO 639.2,
+        // https://www.data2type.de/xml-xslt-xslfo/xml/xml-in-a-nutshell/internationalisierung/xml-lang
+        // XML XSD is also not quite clear...
+        final Set<String> REQUIRED_LANGS = Set.of("en", "eng");
+
+        for (ResourceInfo resource : resources) {
+            boolean hasEngTitle = resource.getTitle().keySet().stream().anyMatch(lang -> REQUIRED_LANGS.contains(lang));
+            if (strict) {
+                assertTrue(hasEngTitle,
+                        String.format("Missing required english title in Resource %s", resource.getPid()));
+            } else {
+                assumeTrueElseWarn(hasEngTitle,
+                        String.format("Missing required english title in Resource %s", resource.getPid()));
+            }
+
+            if (resource.getDescription() != null) {
+                boolean hasEngDescription = resource.getDescription().keySet().stream()
+                        .anyMatch(lang -> REQUIRED_LANGS.contains(lang));
+                if (strict) {
+                    assertTrue(hasEngDescription,
+                            String.format("Missing required english description in Resource %s", resource.getPid()));
+                } else {
+                    assumeTrueElseWarn(hasEngDescription,
+                            String.format("Missing required english description in Resource %s", resource.getPid()));
+                }
+            }
+
+            if (resource.getInstitution() != null) {
+                boolean hasEngInstitution = resource.getInstitution().keySet().stream()
+                        .anyMatch(lang -> REQUIRED_LANGS.contains(lang));
+                if (strict) {
+                    assertTrue(hasEngInstitution,
+                            String.format("Missing required english institution in Resource %s", resource.getPid()));
+                } else {
+                    assumeTrueElseWarn(hasEngInstitution,
+                            String.format("Missing required english institution in Resource %s", resource.getPid()));
+                }
+            }
+
+            assertHasEnglishStringsInResourcesRecursive(resource.getSubResources(), strict);
+        }
+    }
+
+    // ----------------------------------------------------------------------
     // FCS: valid language codes in EndpointDescription > Resources
 
     @Test
-    @Order(1300)
+    @Order(1400)
     @ClarinFCS10
     @ClarinFCS20
     @LexFCS
