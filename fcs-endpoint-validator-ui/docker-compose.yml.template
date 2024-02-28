@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  fcs-endpoint-validator:
+    build:
+      context: .
+      dockerfile: fcs-endpoint-validator-ui/Dockerfile
+    container_name: fcs-endpoint-validator
+    ports:
+      # localhost only, e.g. if behind proxy
+      #- "127.0.0.1:8080:8080"
+      # default, public 8080 to docker container 8080
+      - 8080:8080
+    restart: unless-stopped
+
+# copy this into the root folder
+# 1. docker compose build
+# 2. (optional) docker compose down -v
+# 2. docker compose up -d
