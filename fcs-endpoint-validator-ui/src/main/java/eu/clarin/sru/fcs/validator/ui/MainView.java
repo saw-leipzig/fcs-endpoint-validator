@@ -215,8 +215,12 @@ public class MainView extends VerticalLayout {
         titleRow.setJustifyContentMode(JustifyContentMode.START);
         titleRow.setAlignItems(Alignment.CENTER);
 
-        Icon iconTitle = new Icon();
-        titleRow.add(iconTitle);
+        // set image height to 35px, based on H1; var(--lumo-icon-size-l) ?
+        Image imgLogoCLARIN = new Image("themes/fcs-endpoint-validator/images/logo-clarin.png",
+                "Logo Common Language Resources and Technology Infrastructure");
+        imgLogoCLARIN.setHeight("35px");
+        imgLogoCLARIN.setAriaLabel("Logo of Common Language Resources and Technology Infrastructure");
+        titleRow.add(imgLogoCLARIN);
 
         H1 lblTitle = new H1();
         lblTitle.setText("FCS SRU Endpoint Validator");
@@ -224,10 +228,12 @@ public class MainView extends VerticalLayout {
         lblTitle.getStyle().set("font-size", "var(--lumo-font-size-xxl)");
         titleRow.add(lblTitle);
 
-        Image imgLogo = new Image("themes/fcs-endpoint-validator/images/logo-saw.png", "Logo SAW");
-        imgLogo.setHeight("35px"); // based on H1; var(--lumo-icon-size-l) ?
-        imgLogo.addClassName(LumoUtility.Margin.Left.AUTO);
-        titleRow.add(imgLogo);
+        Image imgLogoSAW = new Image("themes/fcs-endpoint-validator/images/logo-saw.png",
+                "Logo Saxon Academy of Sciences and Humanities in Leipzig");
+        imgLogoSAW.setHeight("35px");
+        imgLogoSAW.addClassName(LumoUtility.Margin.Left.AUTO);
+        imgLogoSAW.setAriaLabel("Logo of Saxon Academy of Sciences and Humanities in Leipzig");
+        titleRow.add(imgLogoSAW);
 
         return titleRow;
     }
