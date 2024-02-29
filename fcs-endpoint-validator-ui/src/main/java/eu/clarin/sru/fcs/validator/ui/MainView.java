@@ -139,7 +139,7 @@ public class MainView extends VerticalLayout {
                 // show notification
                 Notification notification = new Notification();
                 notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
-                notification.setDuration((int) secondsUntilEnabled * 1_000);
+                notification.setDuration((int) secondsUntilEnabled * 1_000 + 1);
                 notification.setText(String.format("Please wait %s seconds to start your next validation request.",
                         secondsUntilEnabled));
                 notification.open();
