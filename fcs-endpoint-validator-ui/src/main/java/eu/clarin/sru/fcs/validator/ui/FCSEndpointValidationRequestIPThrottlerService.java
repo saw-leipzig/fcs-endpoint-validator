@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.EstimationProbe;
-import io.github.bucket4j.Refill;
 
 @Service
 public class FCSEndpointValidationRequestIPThrottlerService {
@@ -40,7 +39,10 @@ public class FCSEndpointValidationRequestIPThrottlerService {
     }
 
     private Bucket newBucket(String ipAddress) {
-        final Bandwidth limit = Bandwidth.classic(1, Refill.intervally(1, Duration.ofSeconds(THROTTLE_SECONDS)));
+        Bandwidth limit = Bandwidth.builder()
+                .capacity(1)
+                .refillIntervally(1, Duration.ofSeconds(THROTTLE_SECONDS))
+                .initialTokens(1).build();
         return Bucket.builder().addLimit(limit).build();
     }
 
