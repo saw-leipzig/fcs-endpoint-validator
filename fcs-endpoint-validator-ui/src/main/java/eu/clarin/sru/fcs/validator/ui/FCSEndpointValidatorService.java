@@ -18,7 +18,7 @@ import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
 
 @Service
 public class FCSEndpointValidatorService {
-    protected static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidatorService.class);
+    private static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidatorService.class);
 
     protected static final FCSEndpointValidatorService instance = new FCSEndpointValidatorService();
 

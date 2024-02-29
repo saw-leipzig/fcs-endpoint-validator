@@ -24,7 +24,7 @@ import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
 import eu.clarin.sru.fcs.validator.FCSTestResult;
 
 public class ProgressView extends VerticalLayout implements FCSEndpointValidatorProgressListener {
-    protected static final Logger logger = LoggerFactory.getLogger(ProgressView.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProgressView.class);
 
     final UI ui;
 

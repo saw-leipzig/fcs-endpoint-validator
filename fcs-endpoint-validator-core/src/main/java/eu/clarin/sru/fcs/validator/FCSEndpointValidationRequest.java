@@ -132,4 +132,15 @@ public class FCSEndpointValidationRequest {
         return null;
     }
 
+    // ----------------------------------------------------------------------
+
+    @Override
+    public String toString() {
+        return "FCSEndpointValidationRequest [properties=" + properties + ", connectTimeout=" + connectTimeout
+                + ", socketTimeout=" + socketTimeout + ", performProbeRequest=" + performProbeRequest
+                + ", progressListener=" + progressListener + ", profile=" + profile + ", strictMode=" + strictMode
+                + ", indentResponse=" + indentResponse + ", baseURI=" + baseURI + ", userSearchTerm=" + userSearchTerm
+                + "]";
+    }
+
 }

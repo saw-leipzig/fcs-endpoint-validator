@@ -5,6 +5,9 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +35,8 @@ import com.vaadin.flow.component.html.Pre;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -41,13 +46,14 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.PreserveOnRefresh;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.WebBrowser;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
-import eu.clarin.sru.fcs.validator.FCSEndpointValidatorProgressListener;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
+import eu.clarin.sru.fcs.validator.FCSEndpointValidatorProgressListener;
 import eu.clarin.sru.fcs.validator.FCSTestConstants;
 import eu.clarin.sru.fcs.validator.FCSTestProfile;
 
@@ -59,7 +65,9 @@ import eu.clarin.sru.fcs.validator.FCSTestProfile;
 // @JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
 public class MainView extends VerticalLayout {
 
-    protected static final Logger logger = LoggerFactory.getLogger(MainView.class);
+    private static final Logger logger = LoggerFactory.getLogger(MainView.class);
+
+    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public VerticalLayout mainContent;
     public TextField txtEndpointURL;
@@ -120,6 +128,34 @@ public class MainView extends VerticalLayout {
         btnStart.addClickListener(event -> {
             // input field validation should happen automatically
 
+            final WebBrowser browser = UI.getCurrent().getSession().getBrowser();
+            final String ipAddress = browser.getAddress();
+
+            FCSEndpointValidationRequestIPThrottlerService throttler = FCSEndpointValidationRequestIPThrottlerService
+                    .getInstance();
+            if (!throttler.resolveBucket(ipAddress).tryConsume(1)) {
+                long secondsUntilEnabled = throttler.waitTimeUntilConsumable(ipAddress);
+
+                // show notification
+                Notification notification = new Notification();
+                notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                notification.setDuration((int) secondsUntilEnabled * 1_000);
+                notification.setText(String.format("Please wait %s seconds to start your next validation request.",
+                        secondsUntilEnabled));
+                notification.open();
+
+                // disable button
+                btnStart.setEnabled(false);
+                // and schedule re-enable after wait time
+                final UI ui = UI.getCurrent();
+                executor.schedule(() -> {
+                    ui.access(() -> {
+                        btnStart.setEnabled(true);
+                    });
+                }, secondsUntilEnabled, TimeUnit.SECONDS);
+                return;
+            }
+
             // build FCS Validation Request
             final FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
             // required inputs
@@ -132,6 +168,8 @@ public class MainView extends VerticalLayout {
             request.setIndentResponse(selIndentResponse.getValue());
             request.setConnectTimeout(selConnectTimeout.getValue());
             request.setSocketTimeout(selSocketTimeout.getValue());
+
+            logger.info("New endpoint validation request {} from {}", request, ipAddress);
 
             // NOTE: this is a bit weird/side-effecty
             // we need to create a view but the listener is connected to it

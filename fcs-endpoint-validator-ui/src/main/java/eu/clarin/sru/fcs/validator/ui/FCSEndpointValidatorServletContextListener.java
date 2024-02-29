@@ -11,7 +11,7 @@ import jakarta.servlet.annotation.WebListener;
 public class FCSEndpointValidatorServletContextListener implements ServletContextListener {
     // @WebListener - https://stackoverflow.com/a/36588744/9360161
 
-    protected static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidatorServletContextListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidatorServletContextListener.class);
 
     // ----------------------------------------------------------------------
 
