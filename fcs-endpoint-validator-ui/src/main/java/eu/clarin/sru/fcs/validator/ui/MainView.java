@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,9 +45,14 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasUrlParameter;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.PreserveOnRefresh;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.WildcardParameter;
 import com.vaadin.flow.server.WebBrowser;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
@@ -63,7 +70,7 @@ import eu.clarin.sru.fcs.validator.FCSTestProfile;
 @Uses(Icon.class)
 @JsModule("./prefers-color-scheme.js")
 // @JsModule("@vaadin/vaadin-lumo-styles/presets/compact.js")
-public class MainView extends VerticalLayout {
+public class MainView extends VerticalLayout implements HasUrlParameter<String> {
 
     private static final Logger logger = LoggerFactory.getLogger(MainView.class);
 
@@ -98,20 +105,10 @@ public class MainView extends VerticalLayout {
 
         setMainContentNoResults();
 
-        // // demo for later http response inspection
-        // AceEditor ace = new AceEditor();
-        // ace.setTheme(AceTheme.github);
-        // ace.setMode(AceMode.xml);
-        // ace.setReadOnly(true);
-        // ace.setValue("<?xml version='1.0' encoding='utf-8'?>\n...");
-        // mainContent.add(ace);
-
         // --------------------------------------------------------
         // compose all
 
         setWidth("100%");
-        // setSpacing(false);
-        // setPadding(false);
         getStyle().set("flex-grow", "1");
         addClassNames(LumoUtility.MinHeight.SCREEN, Padding.Bottom.NONE);
 
@@ -124,7 +121,14 @@ public class MainView extends VerticalLayout {
         // --------------------------------------------------------
         // event handlers
 
-        btnStart.addClickShortcut(Key.ENTER);
+        setupEventHandlers();
+    }
+
+    // ----------------------------------------------------------------------
+    // event handlers
+
+    public void setupEventHandlers() {
+        // start evaluation/validation button
         btnStart.addClickListener(event -> {
             // input field validation should happen automatically
 
@@ -135,6 +139,8 @@ public class MainView extends VerticalLayout {
                     .getInstance();
             if (!throttler.resolveBucket(ipAddress).tryConsume(1)) {
                 long secondsUntilEnabled = throttler.waitTimeUntilConsumable(ipAddress);
+                logger.warn("Throttle endpoint validation request for ip={}, need to wait {}s, target: {}", ipAddress,
+                        secondsUntilEnabled, txtEndpointURL.getValue().strip());
 
                 // show notification
                 Notification notification = new Notification();
@@ -211,6 +217,32 @@ public class MainView extends VerticalLayout {
     }
 
     // ----------------------------------------------------------------------
+    // optional request parameter handling
+
+    @Override
+    public void setParameter(BeforeEvent event, @WildcardParameter String parameter) {
+        logger.debug("setParameter: path {}", parameter);
+
+        final Location location = event.getLocation();
+        final QueryParameters queryParameters = location.getQueryParameters();
+        final Map<String, List<String>> parametersMap = queryParameters.getParameters();
+        logger.debug("setParameter: query {}", queryParameters);
+        logger.debug("setParameter: query@map {}", parametersMap);
+
+        // populate input fields
+        queryParameters.getSingleParameter("url").ifPresent(url -> txtEndpointURL.setValue(url));
+        queryParameters.getSingleParameter("searchterm").ifPresent(term -> txtSearchTerm.setValue(term));
+        // start validation if requested
+        queryParameters.getSingleParameter("action").ifPresent(action -> {
+            if ("validate".equals(action)) {
+                // btnStart.click() vs. btnStart.clickInClient() ?
+                btnStart.click();
+            }
+        });
+    }
+
+    // ----------------------------------------------------------------------
+    // actions to modify UI
 
     public void setInputEnabled(boolean enabled) {
         btnStart.setEnabled(enabled);
@@ -243,6 +275,7 @@ public class MainView extends VerticalLayout {
     }
 
     // ----------------------------------------------------------------------
+    // UI building blocks: page layout
 
     public Component createHeader() {
         HorizontalLayout titleRow = new HorizontalLayout();
@@ -313,6 +346,7 @@ public class MainView extends VerticalLayout {
     }
 
     // ----------------------------------------------------------------------
+    // UI building blocks: user input
 
     public Component createInputFields() {
         FormLayout flInputs = new FormLayout();
@@ -381,6 +415,7 @@ public class MainView extends VerticalLayout {
         btnStart.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnStart.setIcon(VaadinIcon.DOCTOR.create());
         btnStart.setDisableOnClick(true);
+        btnStart.addClickShortcut(Key.ENTER);
         vlButtons.add(btnStart);
 
         btnConfig = new Button();
@@ -536,6 +571,7 @@ public class MainView extends VerticalLayout {
     }
 
     // ----------------------------------------------------------------------
+    // UI building blocks: results / content area
 
     public Component createNoResultsPlaceholder() {
         VerticalLayout lytNoResults = new VerticalLayout();
