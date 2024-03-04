@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 public class HttpRequestResponseInfo implements Serializable {
     protected static final Logger logger = LoggerFactory.getLogger(HttpRequestResponseInfo.class);
 
+    private static final long serialVersionUID = 2024_03_04L;
+
     private HttpRequest request;
     private HttpResponse response;
     private byte[] responseBytes;
@@ -99,6 +101,8 @@ public class HttpRequestResponseInfo implements Serializable {
     @SuppressWarnings("deprecation")
     public static class SerializableAbstractHttpMessage implements HttpMessage, Serializable {
         // see: org.apache.http.message.AbstractHttpMessage
+
+        private static final long serialVersionUID = 2024_03_04L;
 
         protected ProtocolVersion protocolVersion;
         protected HeaderGroup headergroup = new HeaderGroup();
@@ -215,6 +219,8 @@ public class HttpRequestResponseInfo implements Serializable {
     public static class SerializableHttpRequestWrapper extends SerializableAbstractHttpMessage implements HttpRequest {
         // see: org.apache.http.client.methods.HttpRequestWrapper
 
+        private static final long serialVersionUID = 2024_03_04L;
+
         protected RequestLine requestLine;
 
         @SuppressWarnings("deprecation")
@@ -245,6 +251,8 @@ public class HttpRequestResponseInfo implements Serializable {
             implements HttpResponse {
         // see: org.apache.http.impl.execchain.HttpResponseProxy
         // see: org.apache.http.message.BasicHttpResponse
+
+        private static final long serialVersionUID = 2024_03_04L;
 
         protected StatusLine statusline;
         protected int code;
@@ -377,6 +385,8 @@ public class HttpRequestResponseInfo implements Serializable {
     public static class SerializableByteArrayEntity extends AbstractHttpEntity implements Serializable {
         // see: org.apache.http.entity.ByteArrayEntity
         // see: org.apache.http.client.entity.EntityBuilder
+
+        private static final long serialVersionUID = 2024_03_04L;
 
         protected byte[] b = null;
         protected int off = 0;

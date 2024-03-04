@@ -6,6 +6,8 @@ import java.util.Map;
 
 public class FCSEndpointValidationRequest implements Serializable {
 
+    private static final long serialVersionUID = 2024_03_04L;
+
     private Map<String, Object> properties;
 
     private int connectTimeout = FCSTestHttpClientFactory.DEFAULT_CONNECT_TIMEOUT;

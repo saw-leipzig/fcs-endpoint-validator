@@ -15,6 +15,8 @@ import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.TestAbortedWithWarningE
 public class FCSTestResult implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(FCSTestResult.class);
 
+    private static final long serialVersionUID = 2024_03_04L;
+
     private String uniqueId;
     private String category;
     private String name;

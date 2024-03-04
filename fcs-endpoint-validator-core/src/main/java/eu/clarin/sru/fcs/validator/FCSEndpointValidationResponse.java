@@ -7,6 +7,8 @@ import java.util.Map;
 
 public class FCSEndpointValidationResponse implements Serializable {
 
+    private static final long serialVersionUID = 2024_03_04L;
+
     private final FCSEndpointValidationRequest request;
 
     private final Map<String, FCSTestResult> results;
