@@ -236,7 +236,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         queryParameters.getSingleParameter("action").ifPresent(action -> {
             if ("validate".equals(action)) {
                 // btnStart.click() vs. btnStart.clickInClient() ?
-                btnStart.click();
+                btnStart.clickInClient()
             }
         });
     }
