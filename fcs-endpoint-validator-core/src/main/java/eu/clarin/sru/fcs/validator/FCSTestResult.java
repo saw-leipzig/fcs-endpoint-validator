@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.validator;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.logging.log4j.core.LogEvent;
@@ -11,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.TestAbortedWithWarningException;
 
-public class FCSTestResult {
+public class FCSTestResult implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(FCSTestResult.class);
 
     private String uniqueId;
@@ -20,7 +21,8 @@ public class FCSTestResult {
     private String expected;
     private List<LogEvent> logs;
     private List<HttpRequestResponseInfo> httpRequestResponses;
-    private TestExecutionResult testExecutionResult = null;
+    private TestExecutionResult.Status status = null;
+    private Throwable throwable = null;
     private String skipReason = null;
 
     // ----------------------------------------------------------------------
@@ -34,8 +36,14 @@ public class FCSTestResult {
         this.expected = expected;
         this.logs = logs;
         this.httpRequestResponses = httpRequestResponses;
-        this.testExecutionResult = testExecutionResult;
         this.skipReason = skipReason;
+
+        if (testExecutionResult != null) {
+            status = testExecutionResult.getStatus();
+            testExecutionResult.getThrowable().ifPresent(t -> {
+                this.throwable = t;
+            });
+        }
     }
 
     public FCSTestResult(String uniqueId, String category, String name, String expected, List<LogEvent> logs,
@@ -89,8 +97,12 @@ public class FCSTestResult {
         return httpRequestResponses;
     }
 
-    public TestExecutionResult getTestExecutionResult() {
-        return testExecutionResult;
+    public TestExecutionResult.Status getTestExecutionResultStatus() {
+        return status;
+    }
+
+    public Throwable getTestExecutionResultThrowable() {
+        return throwable;
     }
 
     public String getSkipReason() {
@@ -98,11 +110,8 @@ public class FCSTestResult {
     }
 
     public Throwable getException() {
-        if (testExecutionResult.getThrowable().isPresent()) {
-            Throwable t = testExecutionResult.getThrowable().get();
-            if (!(t instanceof IncompleteExecutionException)) {
-                return t;
-            }
+        if (throwable != null && !(throwable instanceof IncompleteExecutionException)) {
+            return throwable;
         }
         return null;
     }
@@ -112,8 +121,8 @@ public class FCSTestResult {
         if (skipReason != null) {
             return skipReason;
         }
-        if (testExecutionResult.getThrowable().isPresent()) {
-            return testExecutionResult.getThrowable().get().getMessage();
+        if (throwable != null) {
+            return throwable.getMessage();
         }
         return null;
     }
@@ -128,47 +137,44 @@ public class FCSTestResult {
     }
 
     public FCSTestResultStatus getStatus() {
-        if (testExecutionResult == null) {
+        if (status == null) {
             // see skipReason
             return FCSTestResultStatus.SKIPPED;
         }
-        switch (testExecutionResult.getStatus()) {
+        switch (status) {
             case SUCCESSFUL:
                 return FCSTestResultStatus.SUCCESSFUL;
             case FAILED:
                 return FCSTestResultStatus.FAILED;
             case ABORTED:
-                if (testExecutionResult.getThrowable().isPresent()) {
-                    Throwable ex = testExecutionResult.getThrowable().get();
-                    if (ex instanceof TestAbortedException && ex.getMessage().startsWith("Assumption failed")) {
+                if (throwable != null) {
+                    if (throwable instanceof TestAbortedException
+                            && throwable.getMessage().startsWith("Assumption failed")) {
                         return FCSTestResultStatus.SKIPPED;
-                    } else if (ex instanceof TestAbortedWithWarningException) {
+                    } else if (throwable instanceof TestAbortedWithWarningException) {
                         return FCSTestResultStatus.WARNING;
                     }
                 }
 
         }
-        logger.warn("Unknown condition for TestExecutionResult! result = {}", testExecutionResult);
+        logger.warn("Unknown condition for TestExecutionResult! status = {} throwable = {}", status, throwable);
         return null;
     }
 
     public boolean isSuccess() {
-        return (testExecutionResult != null) ? testExecutionResult.getStatus() == TestExecutionResult.Status.SUCCESSFUL
-                : false;
+        return (status != null) ? status == TestExecutionResult.Status.SUCCESSFUL : false;
     }
 
     public boolean isFailure() {
-        return (testExecutionResult != null) ? testExecutionResult.getStatus() == TestExecutionResult.Status.FAILED
-                : false;
+        return (status != null) ? status == TestExecutionResult.Status.FAILED : false;
     }
 
     public boolean isWarning() {
-        if (testExecutionResult == null) {
+        if (status == null) {
             return false;
         }
-        if (testExecutionResult.getStatus() == TestExecutionResult.Status.ABORTED) {
-            Throwable ex = testExecutionResult.getThrowable().get();
-            if (ex instanceof TestAbortedWithWarningException) {
+        if (status == TestExecutionResult.Status.ABORTED && throwable != null) {
+            if (throwable instanceof TestAbortedWithWarningException) {
                 return true;
             }
         }
@@ -176,14 +182,12 @@ public class FCSTestResult {
     }
 
     public boolean isSkipped() {
-        if (testExecutionResult == null) {
+        if (status == null) {
             // skipped due to @Disabled or similar
             return true;
         }
-        if (testExecutionResult.getStatus() == TestExecutionResult.Status.ABORTED
-                && testExecutionResult.getThrowable().isPresent()) {
-            Throwable ex = testExecutionResult.getThrowable().get();
-            if (ex instanceof TestAbortedException && ex.getMessage().startsWith("Assumption failed")) {
+        if (status == TestExecutionResult.Status.ABORTED && throwable != null) {
+            if (throwable instanceof TestAbortedException && throwable.getMessage().startsWith("Assumption failed")) {
                 return true;
             }
         }

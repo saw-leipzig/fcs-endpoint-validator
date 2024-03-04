@@ -354,7 +354,7 @@ public class FCSEndpointValidator {
             FCSTestResult result = e.getValue();
 
             // silently skip
-            if (hideAborted && result.getTestExecutionResult().getStatus() == TestExecutionResult.Status.ABORTED) {
+            if (hideAborted && result.getTestExecutionResultStatus() == TestExecutionResult.Status.ABORTED) {
                 return;
             }
 
@@ -385,23 +385,23 @@ public class FCSEndpointValidator {
             switch (result.getStatus()) {
                 case FAILED:
                     logger.info("      * failed, reason: {}",
-                            (result.getTestExecutionResult().getThrowable().isPresent())
-                                    ? result.getTestExecutionResult().getThrowable().get().getMessage()
+                            (result.getTestExecutionResultThrowable() != null)
+                                    ? result.getTestExecutionResultThrowable().getMessage()
                                     : "~~ unknown ~~");
                     logger.info("      * expected: {}", result.getExpected());
                     break;
                 case WARNING:
                     logger.info("      * aborted with warning, reason: {}",
                             (result.getSkipReason() != null) ? result.getSkipReason()
-                                    : (result.getTestExecutionResult().getThrowable().isPresent())
-                                            ? result.getTestExecutionResult().getThrowable().get().getMessage()
+                                    : (result.getTestExecutionResultThrowable() != null)
+                                            ? result.getTestExecutionResultThrowable().getMessage()
                                             : "~~ unknown ~~");
                     logger.info("      * expected: {}", result.getExpected());
                     break;
                 case SKIPPED:
                     logger.info("      * skipped, reason: {}", (result.getSkipReason() != null) ? result.getSkipReason()
-                            : (result.getTestExecutionResult().getThrowable().isPresent())
-                                    ? result.getTestExecutionResult().getThrowable().get().getMessage()
+                            : (result.getTestExecutionResultThrowable() != null)
+                                    ? result.getTestExecutionResultThrowable().getMessage()
                                     : "~~ unknown ~~");
                     logger.info("      * expected: {}", result.getExpected());
                     break;

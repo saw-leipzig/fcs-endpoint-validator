@@ -1,10 +1,11 @@
 package eu.clarin.sru.fcs.validator;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class FCSEndpointValidationResponse {
+public class FCSEndpointValidationResponse implements Serializable {
 
     private final FCSEndpointValidationRequest request;
 

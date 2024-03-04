@@ -94,7 +94,7 @@ public class HttpRequestResponseRecordingInterceptor extends GenericRecorder<Htt
                 .setContentType(
                         (entity.getContentType() != null)
                                 ? ContentType.parse(entity.getContentType().getValue())
-                                : null);
+                                : ContentType.DEFAULT_BINARY);
 
         try (InputStream is = entity.getContent()) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();

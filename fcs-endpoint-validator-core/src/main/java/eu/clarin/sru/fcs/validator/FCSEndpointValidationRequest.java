@@ -1,9 +1,10 @@
 package eu.clarin.sru.fcs.validator;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FCSEndpointValidationRequest {
+public class FCSEndpointValidationRequest implements Serializable {
 
     private Map<String, Object> properties;
 
@@ -11,7 +12,7 @@ public class FCSEndpointValidationRequest {
     private int socketTimeout = FCSTestHttpClientFactory.DEFAULT_SOCKET_TIMEOUT;
     private boolean performProbeRequest = true;
 
-    private FCSEndpointValidatorProgressListener progressListener = null;
+    private transient FCSEndpointValidatorProgressListener progressListener = null;
 
     private FCSTestProfile profile = null;
     private boolean strictMode = FCSTestContext.DEFAULT_STRICT_MODE;
