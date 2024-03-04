@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -74,6 +75,8 @@ import eu.clarin.sru.fcs.validator.FCSTestProfile;
 public class MainView extends VerticalLayout implements HasUrlParameter<String> {
 
     private static final Logger logger = LoggerFactory.getLogger(MainView.class);
+
+    public static final String PATH_PREFIX_RESULTS = "results/";
 
     @Autowired
     private FCSEndpointValidatorService fcsEndpointValidatorService;
@@ -191,7 +194,12 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
             try {
                 fcsEndpointValidatorService.evalute(request).thenAccept((response) -> {
                     // try to store result
-                    fcsEndpointValidatorService.storeFCSEndpointValidationResult(response);
+                    final String resultId = fcsEndpointValidatorService.storeFCSEndpointValidationResult(response);
+                    if (resultId != null) {
+                        ui.access(() -> {
+                            showNotificationResultId(resultId);
+                        });
+                    }
 
                     // update UI
                     ui.access(() -> {
@@ -231,6 +239,44 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     @Override
     public void setParameter(BeforeEvent event, @WildcardParameter String parameter) {
         logger.debug("setParameter: path {}", parameter);
+
+        if (parameter != null && parameter.startsWith(PATH_PREFIX_RESULTS)) {
+            final String resultId = parameter.substring(PATH_PREFIX_RESULTS.length());
+            logger.info("Possible result id: {}", resultId);
+
+            try {
+                if (!UUID.fromString(resultId).toString().equals(resultId)) {
+                    throw new IllegalArgumentException(
+                            "Invalid UUID! Parsed representation does not match original one.");
+                }
+            } catch (IllegalArgumentException e) {
+                logger.debug("Trying to load from invalid result id: {}", resultId);
+
+                Notification notification = new Notification();
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                notification.setDuration(5000);
+                notification.setText(String.format("Requested result id '%s' is not valid!", resultId));
+                notification.open();
+                return;
+            }
+
+            final FCSEndpointValidationResponse result = fcsEndpointValidatorService
+                    .loadFCSEndpointValidationResult(resultId);
+            if (result == null) {
+                logger.debug("Did not find a result for result id: {}", resultId);
+
+                Notification notification = new Notification();
+                notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                notification.setDuration(5000);
+                notification.setText(String.format("No result could be found for result id '%s'!", resultId));
+                notification.open();
+                return;
+            }
+
+            setInputFromRequest(result.getRequest());
+            setMainContentResults(result);
+            return;
+        }
 
         final Location location = event.getLocation();
         final QueryParameters queryParameters = location.getQueryParameters();
@@ -273,6 +319,17 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         return progressView;
     }
 
+    public void setInputFromRequest(FCSEndpointValidationRequest request) {
+        txtEndpointURL.setValue(request.getBaseURI());
+        txtSearchTerm.setValue(request.getUserSearchTerm());
+        selTestProfile.setValue(request.getFCSTestProfile());
+        chkStrictMode.setValue(request.isStrictMode());
+        chkProbeRequest.setValue(request.isPerformProbeRequest());
+        selIndentResponse.setValue(request.getIndentResponse());
+        selConnectTimeout.setValue(request.getConnectTimeout());
+        selSocketTimeout.setValue(request.getSocketTimeout());
+    }
+
     public void setMainContentResults(FCSEndpointValidationResponse result) {
         mainContent.removeAll();
         mainContent.add(new ResultsView(result));
@@ -281,6 +338,30 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     public void setMainContentError(String title, Throwable t) {
         mainContent.removeAll();
         mainContent.add(createShowErrorContent(title, t));
+    }
+
+    public void showNotificationResultId(final String resultId) {
+        Notification notification = new Notification();
+        notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+        notification.setDuration(15000);
+
+        Button closeButton = new Button(new Icon("lumo", "cross"));
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+        closeButton.setAriaLabel("Close");
+        closeButton.addClickListener(event -> {
+            notification.close();
+        });
+
+        Span msg = new Span();
+        msg.add("Your endpoint validation result was saved temporarily.");
+        msg.add(" You can retrieve it for a limited period of time under ");
+        msg.add(new Anchor(PATH_PREFIX_RESULTS + resultId, resultId));
+        msg.add(".");
+
+        HorizontalLayout layout = new HorizontalLayout(msg, closeButton);
+        notification.add(layout);
+
+        notification.open();
     }
 
     // ----------------------------------------------------------------------
