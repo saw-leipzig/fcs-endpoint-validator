@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.validator.ui;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -13,6 +14,9 @@ public class FCSEndpointValidatorServletContextListener implements ServletContex
 
     private static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidatorServletContextListener.class);
 
+    @Autowired
+    private FCSEndpointValidatorService fcsEndpointValidatorService;
+
     // ----------------------------------------------------------------------
 
     @Override
@@ -23,7 +27,7 @@ public class FCSEndpointValidatorServletContextListener implements ServletContex
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         logger.info("context destroyed");
-        FCSEndpointValidatorService.getInstance().shutdown();
+        fcsEndpointValidatorService.shutdown();
     }
 
 }

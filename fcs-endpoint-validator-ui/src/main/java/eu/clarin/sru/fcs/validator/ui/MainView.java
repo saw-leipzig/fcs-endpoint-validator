@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ItemLabelGenerator;
@@ -73,6 +74,12 @@ import eu.clarin.sru.fcs.validator.FCSTestProfile;
 public class MainView extends VerticalLayout implements HasUrlParameter<String> {
 
     private static final Logger logger = LoggerFactory.getLogger(MainView.class);
+
+    @Autowired
+    private FCSEndpointValidatorService fcsEndpointValidatorService;
+
+    @Autowired
+    private FCSEndpointValidationRequestIPThrottlerService fcsEndpointValdidationRequestThrottler;
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
@@ -135,10 +142,8 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
             final WebBrowser browser = UI.getCurrent().getSession().getBrowser();
             final String ipAddress = browser.getAddress();
 
-            FCSEndpointValidationRequestIPThrottlerService throttler = FCSEndpointValidationRequestIPThrottlerService
-                    .getInstance();
-            if (!throttler.resolveBucket(ipAddress).tryConsume(1)) {
-                long secondsUntilEnabled = throttler.waitTimeUntilConsumable(ipAddress);
+            if (!fcsEndpointValdidationRequestThrottler.resolveBucket(ipAddress).tryConsume(1)) {
+                long secondsUntilEnabled = fcsEndpointValdidationRequestThrottler.waitTimeUntilConsumable(ipAddress);
                 logger.warn("Throttle endpoint validation request for ip={}, need to wait {}s, target: {}", ipAddress,
                         secondsUntilEnabled, txtEndpointURL.getValue().strip());
 
@@ -184,7 +189,11 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
 
             final UI ui = UI.getCurrent();
             try {
-                FCSEndpointValidatorService.getInstance().evalute(request).thenAccept((response) -> {
+                fcsEndpointValidatorService.evalute(request).thenAccept((response) -> {
+                    // try to store result
+                    fcsEndpointValidatorService.storeFCSEndpointValidationResult(response);
+
+                    // update UI
                     ui.access(() -> {
                         // re-enable input for user
                         setInputEnabled(true);

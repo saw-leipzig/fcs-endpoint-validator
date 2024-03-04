@@ -16,20 +16,14 @@ import io.github.bucket4j.EstimationProbe;
 public class FCSEndpointValidationRequestIPThrottlerService {
     private static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidationRequestIPThrottlerService.class);
 
-    // TODO: make configurable
-    public static final int THROTTLE_SECONDS = 5;
-
-    protected static final FCSEndpointValidationRequestIPThrottlerService instance = new FCSEndpointValidationRequestIPThrottlerService();
+    protected final FCSEndpointValidatorProperties properties;
 
     protected final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 
     // ----------------------------------------------------------------------
 
-    protected FCSEndpointValidationRequestIPThrottlerService() {
-    }
-
-    public static FCSEndpointValidationRequestIPThrottlerService getInstance() {
-        return instance;
+    protected FCSEndpointValidationRequestIPThrottlerService(FCSEndpointValidatorProperties properties) {
+        this.properties = properties;
     }
 
     // ----------------------------------------------------------------------
@@ -41,7 +35,7 @@ public class FCSEndpointValidationRequestIPThrottlerService {
     private Bucket newBucket(String ipAddress) {
         Bandwidth limit = Bandwidth.builder()
                 .capacity(1)
-                .refillIntervally(1, Duration.ofSeconds(THROTTLE_SECONDS))
+                .refillIntervally(1, this.properties.getMinDelayBetweenValidationRequests())
                 .initialTokens(1).build();
         return Bucket.builder().addLimit(limit).build();
     }
