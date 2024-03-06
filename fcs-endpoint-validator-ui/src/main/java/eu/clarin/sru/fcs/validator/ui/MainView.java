@@ -698,7 +698,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         txtErrorStacktrace.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
                 LumoUtility.AlignItems.START, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
                 LumoUtility.Padding.Horizontal.SMALL, LumoUtility.Padding.Vertical.XSMALL,
-                LumoUtility.Margin.Top.XSMALL);
+                LumoUtility.Margin.Top.XSMALL, LumoUtility.Width.FULL, LumoUtility.Overflow.AUTO);
 
         // color the exception title/message
         Span exceptionTitle = new Span(t.toString());

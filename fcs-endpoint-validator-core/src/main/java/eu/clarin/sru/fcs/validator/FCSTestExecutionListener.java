@@ -204,7 +204,6 @@ public class FCSTestExecutionListener implements TestExecutionListener {
             return null;
         }
         MethodSource mSource = (MethodSource) source;
-        
         // check if on method
         Method method = mSource.getJavaMethod();
         Category category = method.getAnnotation(Category.class);
