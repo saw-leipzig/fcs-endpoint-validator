@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.xml.stream.FactoryConfigurationError;
@@ -175,6 +176,9 @@ public class ResultsView extends VerticalLayout {
 
             for (HttpRequestResponseInfo info : result.getHttpRequestResponseInfos()) {
                 HttpRequest temp = info.getRequest();
+                if (temp == null) {
+                    continue;
+                }
                 while (temp instanceof HttpRequestWrapper) {
                     temp = ((HttpRequestWrapper) temp).getOriginal();
                 }
@@ -186,7 +190,9 @@ public class ResultsView extends VerticalLayout {
 
                 Span httpInfo = new Span();
                 httpInfo.add(btnViewHttp);
-                httpInfo.add(String.format(" [%s]: %s %s", info.getResponse().getStatusLine().getStatusCode(),
+                httpInfo.add(String.format(" [%s]: %s %s",
+                        Optional.ofNullable(info.getResponse()).filter(Objects::nonNull)
+                                .map(r -> r.getStatusLine().getStatusCode()).orElse(-1),
                         original.getRequestLine().getMethod(), original.getRequestLine().getUri()));
                 resultDetail.add(httpInfo);
 
@@ -296,20 +302,26 @@ public class ResultsView extends VerticalLayout {
         H3 txtHeaderResponse = new H3("Response");
         txtHeaderResponse.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.Margin.Top.MEDIUM);
         layoutViewCodeMeta.add(txtHeaderResponse);
-        layoutViewCodeMeta.add(new Span(String.format("Status: %s", info.getResponse().getStatusLine().toString())));
-        layoutViewCodeMeta
-                .add(new Span(String.format("Headers: %s", Arrays.toString(info.getResponse().getAllHeaders()))));
-
+        if (info.getResponse() != null) {
+            layoutViewCodeMeta
+                    .add(new Span(String.format("Status: %s", info.getResponse().getStatusLine().toString())));
+            layoutViewCodeMeta
+                    .add(new Span(String.format("Headers: %s", Arrays.toString(info.getResponse().getAllHeaders()))));
+        } else {
+            layoutViewCodeMeta.add(new Span("No response could be found!"));
+        }
         viewCodeDialog.add(layoutViewCodeMeta);
 
-        AceEditor ace = new AceEditor();
-        ace.setTheme(AceTheme.github);
-        ace.setMode(AceMode.xml);
-        ace.setReadOnly(true);
-        ace.setWrap(true);
-        ace.setValue(getByteAsString(info.getResponseBytes()));
-        ace.addClassName(LumoUtility.Margin.Top.MEDIUM);
-        viewCodeDialog.add(ace);
+        if (info.getResponseBytes() != null) {
+            AceEditor ace = new AceEditor();
+            ace.setTheme(AceTheme.github);
+            ace.setMode(AceMode.xml);
+            ace.setReadOnly(true);
+            ace.setWrap(true);
+            ace.setValue(getByteAsString(info.getResponseBytes()));
+            ace.addClassName(LumoUtility.Margin.Top.MEDIUM);
+            viewCodeDialog.add(ace);
+        }
 
         viewCodeDialog.open();
 
