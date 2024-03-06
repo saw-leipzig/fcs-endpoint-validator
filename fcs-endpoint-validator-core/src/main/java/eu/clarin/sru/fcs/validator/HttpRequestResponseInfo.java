@@ -21,6 +21,7 @@ import org.apache.http.ReasonPhraseCatalog;
 import org.apache.http.RequestLine;
 import org.apache.http.StatusLine;
 import org.apache.http.client.entity.EntityBuilder;
+import org.apache.http.client.methods.HttpRequestWrapper;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
@@ -230,14 +231,23 @@ public class HttpRequestResponseInfo implements Serializable {
             wrapper.setHeaders(request.getAllHeaders());
             wrapper.protocolVersion = Optional.ofNullable(request.getRequestLine().getProtocolVersion())
                     .orElse(request.getProtocolVersion());
-            String requestUri = (request instanceof HttpUriRequest)
-                    ? ((HttpUriRequest) request).getURI().toASCIIString()
-                    : request.getRequestLine().getUri();
-            wrapper.requestLine = Optional.ofNullable(request.getRequestLine())
-                    .orElse(new BasicRequestLine(request.getRequestLine().getMethod(),
+            // NOTE: need to unwrap to get original URI
+            HttpRequest unwrapped = unwrap(request);
+            String requestUri = (unwrapped instanceof HttpUriRequest)
+                    ? ((HttpUriRequest) unwrapped).getURI().toASCIIString()
+                    : unwrapped.getRequestLine().getUri();
+            wrapper.requestLine = Optional.ofNullable(unwrapped.getRequestLine())
+                    .orElse(new BasicRequestLine(unwrapped.getRequestLine().getMethod(),
                             (requestUri == null || requestUri.isEmpty()) ? "/" : requestUri,
                             wrapper.protocolVersion));
             return wrapper;
+        }
+
+        protected static HttpRequest unwrap(HttpRequest request) {
+            while (request instanceof HttpRequestWrapper) {
+                request = ((HttpRequestWrapper) request).getOriginal();
+            }
+            return request;
         }
 
         @Override

@@ -17,8 +17,6 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.http.HttpRequest;
-import org.apache.http.client.methods.HttpRequestWrapper;
 import org.apache.logging.log4j.core.LogEvent;
 
 import com.vaadin.flow.component.Component;
@@ -175,14 +173,9 @@ public class ResultsView extends VerticalLayout {
             resultDetail.add(txtHTTPHeader);
 
             for (HttpRequestResponseInfo info : result.getHttpRequestResponseInfos()) {
-                HttpRequest temp = info.getRequest();
-                if (temp == null) {
+                if (info.getRequest() == null) {
                     continue;
                 }
-                while (temp instanceof HttpRequestWrapper) {
-                    temp = ((HttpRequestWrapper) temp).getOriginal();
-                }
-                final HttpRequest original = temp;
 
                 Button btnViewHttp = new Button("View");
                 btnViewHttp.setPrefixComponent(VaadinIcon.FILE_CODE.create());
@@ -193,7 +186,7 @@ public class ResultsView extends VerticalLayout {
                 httpInfo.add(String.format(" [%s]: %s %s",
                         Optional.ofNullable(info.getResponse()).filter(Objects::nonNull)
                                 .map(r -> r.getStatusLine().getStatusCode()).orElse(-1),
-                        original.getRequestLine().getMethod(), original.getRequestLine().getUri()));
+                        info.getRequest().getRequestLine().getMethod(), info.getRequest().getRequestLine().getUri()));
                 resultDetail.add(httpInfo);
 
                 btnViewHttp.addClickListener(event -> showHttpInfoDialog(info));
@@ -273,11 +266,6 @@ public class ResultsView extends VerticalLayout {
     }
 
     private Dialog showHttpInfoDialog(HttpRequestResponseInfo info) {
-        HttpRequest original = info.getRequest();
-        while (original instanceof HttpRequestWrapper) {
-            original = ((HttpRequestWrapper) original).getOriginal();
-        }
-
         Dialog viewCodeDialog = new Dialog();
         viewCodeDialog.setHeaderTitle("HTTP Request/Response Details");
         viewCodeDialog.setMinWidth(80, Unit.VW);
@@ -293,10 +281,12 @@ public class ResultsView extends VerticalLayout {
         txtHeaderRequest.addClassName(LumoUtility.FontSize.LARGE);
         layoutViewCodeMeta.add(txtHeaderRequest);
         Span url = new Span("URL: ");
-        url.add(new Anchor(original.getRequestLine().getUri(), original.getRequestLine().getUri(), AnchorTarget.BLANK));
+        url.add(new Anchor(info.getRequest().getRequestLine().getUri(), info.getRequest().getRequestLine().getUri(),
+                AnchorTarget.BLANK));
         layoutViewCodeMeta.add(url);
-        if (original.getAllHeaders().length > 0) {
-            layoutViewCodeMeta.add(new Span(String.format("Headers: %s", Arrays.toString(original.getAllHeaders()))));
+        if (info.getRequest().getAllHeaders().length > 0) {
+            layoutViewCodeMeta
+                    .add(new Span(String.format("Headers: %s", Arrays.toString(info.getRequest().getAllHeaders()))));
         }
 
         H3 txtHeaderResponse = new H3("Response");
