@@ -1,13 +1,9 @@
 package eu.clarin.sru.fcs.validator.ui;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,9 +20,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import eu.clarin.sru.client.SRUClientException;
-import eu.clarin.sru.fcs.validator.FCSEndpointValidator;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
+import eu.clarin.sru.fcs.validator.FCSEndpointValidator;
 
 @Service
 public class FCSEndpointValidatorService {
@@ -110,21 +106,17 @@ public class FCSEndpointValidatorService {
         return this.properties.isEnabledValidationResultsSaving();
     }
 
-    public String storeFCSEndpointValidationResult(FCSEndpointValidationResponse result) {
+    public String storeFCSEndpointValidationResult(FCSEndpointValidationResult result) {
         if (!this.properties.isEnabledValidationResultsSaving()) {
             return null;
         }
 
         final String resultId = UUID.randomUUID().toString();
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            oos.writeObject(result);
-        } catch (IOException e) {
-            logger.error("Error serializing endpoint validation results", e);
+        byte[] bytes = FCSEndpointValidationResult.serialize(result, resultId);
+        if (bytes == null) {
             return null;
         }
-        byte[] bytes = baos.toByteArray();
 
         File fo = localPathResults.resolve(resultId).toFile();
         try (FileOutputStream fos = new FileOutputStream(fo)) {
@@ -137,7 +129,7 @@ public class FCSEndpointValidatorService {
         return resultId;
     }
 
-    public FCSEndpointValidationResponse loadFCSEndpointValidationResult(String resultId) {
+    public FCSEndpointValidationResult loadFCSEndpointValidationResult(String resultId) {
         if (!this.properties.isEnabledValidationResultsSaving()) {
             return null;
         }
@@ -155,13 +147,7 @@ public class FCSEndpointValidatorService {
             return null;
         }
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-            return (FCSEndpointValidationResponse) ois.readObject();
-        } catch (ClassNotFoundException | IOException e) {
-            logger.error("Error deserializing endpoint validation results", e);
-            return null;
-        }
+        return FCSEndpointValidationResult.deserialize(bytes, resultId);
     }
 
     // ----------------------------------------------------------------------

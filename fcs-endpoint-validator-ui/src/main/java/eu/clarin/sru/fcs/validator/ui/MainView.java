@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,6 +55,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.PreserveOnRefresh;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteConfiguration;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.WildcardParameter;
 import com.vaadin.flow.server.WebBrowser;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -61,7 +64,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationRequest;
-import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidatorProgressListener;
 import eu.clarin.sru.fcs.validator.FCSTestConstants;
 import eu.clarin.sru.fcs.validator.FCSTestProfile;
@@ -76,7 +78,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
 
     private static final Logger logger = LoggerFactory.getLogger(MainView.class);
 
-    public static final String PATH_PREFIX_RESULTS = "results/";
+    public static final String PATH_PREFIX_RESULTS = ResultsView.PATH_PREFIX_RESULTS;
 
     @Autowired
     private FCSEndpointValidatorService fcsEndpointValidatorService;
@@ -137,7 +139,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     // ----------------------------------------------------------------------
     // event handlers
 
-    public void setupEventHandlers() {
+    protected void setupEventHandlers() {
         // start evaluation/validation button
         btnStart.addClickListener(event -> {
             // input field validation should happen automatically
@@ -170,6 +172,14 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
                 return;
             }
 
+            // update location -> strip possible results path
+            // (so refresh doesn't load old result)
+            // see RouterLink() constructor,
+            // RouteConfiguration.forRegistry(ComponentUtil.getRouter(this).getRegistry())
+            final String thisViewUrl = RouteConfiguration.forSessionScope().getUrl(MainView.class,
+                    RouteParameters.empty());
+            UI.getCurrent().getPage().getHistory().replaceState(null, thisViewUrl);
+
             // build FCS Validation Request
             final FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
             // required inputs
@@ -183,6 +193,8 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
             request.setConnectTimeout(selConnectTimeout.getValue());
             request.setSocketTimeout(selSocketTimeout.getValue());
 
+            final Instant requestDatetime = Instant.now();
+
             logger.info("New endpoint validation request {} from {}", request, ipAddress);
 
             // NOTE: this is a bit weird/side-effecty
@@ -193,20 +205,16 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
             final UI ui = UI.getCurrent();
             try {
                 fcsEndpointValidatorService.evalute(request).thenAccept((response) -> {
-                    // try to store result
-                    final String resultId = fcsEndpointValidatorService.storeFCSEndpointValidationResult(response);
-                    if (resultId != null) {
-                        ui.access(() -> {
-                            showNotificationResultId(resultId);
-                        });
-                    }
+                    // wrap result with metadata
+                    final FCSEndpointValidationResult result = new FCSEndpointValidationResult(response, ipAddress,
+                            requestDatetime);
 
                     // update UI
                     ui.access(() -> {
                         // re-enable input for user
                         setInputEnabled(true);
                         // render results
-                        setMainContentResults(response);
+                        setMainContentResults(result);
                     });
                 }).exceptionally(ex -> {
                     logger.error("Exception handler", ex);
@@ -260,7 +268,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
                 return;
             }
 
-            final FCSEndpointValidationResponse result = fcsEndpointValidatorService
+            final FCSEndpointValidationResult result = fcsEndpointValidatorService
                     .loadFCSEndpointValidationResult(resultId);
             if (result == null) {
                 logger.debug("Did not find a result for result id: {}", resultId);
@@ -330,38 +338,14 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         selSocketTimeout.setValue(request.getSocketTimeout());
     }
 
-    public void setMainContentResults(FCSEndpointValidationResponse result) {
+    public void setMainContentResults(FCSEndpointValidationResult result) {
         mainContent.removeAll();
-        mainContent.add(new ResultsView(result));
+        mainContent.add(new ResultsView(result, fcsEndpointValidatorService));
     }
 
     public void setMainContentError(String title, Throwable t) {
         mainContent.removeAll();
         mainContent.add(createShowErrorContent(title, t));
-    }
-
-    public void showNotificationResultId(final String resultId) {
-        Notification notification = new Notification();
-        notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
-        notification.setDuration(15000);
-
-        Button closeButton = new Button(new Icon("lumo", "cross"));
-        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-        closeButton.setAriaLabel("Close");
-        closeButton.addClickListener(event -> {
-            notification.close();
-        });
-
-        Span msg = new Span();
-        msg.add("Your endpoint validation result was saved temporarily.");
-        msg.add(" You can retrieve it for a limited period of time under ");
-        msg.add(new Anchor(PATH_PREFIX_RESULTS + resultId, resultId));
-        msg.add(".");
-
-        HorizontalLayout layout = new HorizontalLayout(msg, closeButton);
-        notification.add(layout);
-
-        notification.open();
     }
 
     // ----------------------------------------------------------------------
@@ -438,7 +422,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     // ----------------------------------------------------------------------
     // UI building blocks: user input
 
-    public Component createInputFields() {
+    protected Component createInputFields() {
         FormLayout flInputs = new FormLayout();
         flInputs.addClassName(Gap.XSMALL);
         flInputs.addClassName(Padding.XSMALL);
@@ -490,7 +474,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         return flInputs;
     }
 
-    public Component createActionButtons() {
+    protected Component createActionButtons() {
         VerticalLayout vlButtons = new VerticalLayout();
         vlButtons.addClassName(Gap.XSMALL);
         vlButtons.addClassName(Padding.XSMALL);
@@ -518,7 +502,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         return vlButtons;
     }
 
-    public Component createUserInputArea() {
+    protected Component createUserInputArea() {
         HorizontalLayout headerRow = new HorizontalLayout();
         headerRow.setSpacing(false);
         headerRow.addClassName(Gap.XSMALL);
@@ -533,7 +517,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         return headerRow;
     }
 
-    public Component createAdditionConfigurationsDialog() {
+    protected Component createAdditionConfigurationsDialog() {
         dlgAdditionalConfigurations = new Dialog();
         dlgAdditionalConfigurations.setHeaderTitle("More Configurations");
 

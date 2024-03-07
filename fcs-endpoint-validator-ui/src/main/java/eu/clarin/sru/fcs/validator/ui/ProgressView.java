@@ -21,7 +21,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidatorProgressListener;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
-import eu.clarin.sru.fcs.validator.FCSTestResult;
 
 public class ProgressView extends VerticalLayout implements FCSEndpointValidatorProgressListener {
     private static final Logger logger = LoggerFactory.getLogger(ProgressView.class);
