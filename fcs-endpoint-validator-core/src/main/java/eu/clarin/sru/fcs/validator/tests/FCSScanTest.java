@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.validator.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -19,6 +20,8 @@ import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.Scan;
 @Scan
 @DisplayName("Scan")
 public class FCSScanTest extends AbstractFCSTest {
+
+    private static final String SRU_UNSUPPORTED_OPERATION = "info:srw/diagnostic/1/4";
 
     // ----------------------------------------------------------------------
     // SRU: invalid scan
@@ -52,7 +55,7 @@ public class FCSScanTest extends AbstractFCSTest {
         req.setScanClause("fcs.resource=root");
         SRUScanResponse res = context.getClient().scan(req);
 
-        assumeFalse(hasDiagnostic(res, "info:srw/diagnostic/1/4"), "Endpoint does not support 'scan' operation");
+        assumeFalse(hasDiagnostic(res, SRU_UNSUPPORTED_OPERATION), "Endpoint does not support 'scan' operation");
 
         assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint");
 
@@ -73,7 +76,7 @@ public class FCSScanTest extends AbstractFCSTest {
         req.setMaximumTerms(1);
         SRUScanResponse res = context.getClient().scan(req);
 
-        assumeFalse(hasDiagnostic(res, "info:srw/diagnostic/1/4"), "Endpoint does not support 'scan' operation");
+        assumeFalse(hasDiagnostic(res, SRU_UNSUPPORTED_OPERATION), "Endpoint does not support 'scan' operation");
         assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
         assertEquals(1, res.getTermsCount(), "Endpoint did not honor 'maximumTerms' argument");
     }
@@ -85,12 +88,21 @@ public class FCSScanTest extends AbstractFCSTest {
     @Order(2040)
     @ClarinFCSAny
     @DisplayName("Scan on 'fcs.resource = root' with bad 'maximumTerms' argument")
-    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\" (or also \"info:srw/diagnostic/1/4\" for non legacy FCS endpoints)")
     void doScanOnRootWithInvalidMaximumTermsArg(FCSTestContext context) throws SRUClientException {
         SRUScanRequest req = context.createScanRequest();
         req.setScanClause("fcs.resource=root");
         req.setExtraRequestData(SRUScanRequest.X_MALFORMED_MAXIMUM_TERMS, "invalid");
         SRUScanResponse res = context.getClient().scan(req);
+
+        // FCS 1.x / 2.0 might just respond with SRU_UNSUPPORTED_OPERATION and not
+        // parse/validate request parameters, this should be ok
+        if (hasDiagnostic(res, SRU_UNSUPPORTED_OPERATION)) {
+            assertTrue(context.getFCSTestProfile() != FCSTestProfile.CLARIN_FCS_LEGACY, "Diagnostics '"
+                    + SRU_UNSUPPORTED_OPERATION + "' (SRU_UNSUPPORTED_OPERATION) is not valid for Legacy FCS!");
+            return;
+        }
+
         assertHasDiagnostic(res, "info:srw/diagnostic/1/6");
     }
 
@@ -98,12 +110,21 @@ public class FCSScanTest extends AbstractFCSTest {
     @Order(2050)
     @ClarinFCSAny
     @DisplayName("Scan on 'fcs.resource = root' with bad 'responsePosition' argument")
-    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\"")
+    @Expected("Expecting diagnostic \"info:srw/diagnostic/1/6\" (or also \"info:srw/diagnostic/1/4\" for non legacy FCS endpoints)")
     void doScanOnRootWithInvalidResponsePositionArg(FCSTestContext context) throws SRUClientException {
         SRUScanRequest req = context.createScanRequest();
         req.setScanClause("fcs.resource=root");
         req.setExtraRequestData(SRUScanRequest.X_MALFORMED_RESPONSE_POSITION, "invalid");
         SRUScanResponse res = context.getClient().scan(req);
+
+        // FCS 1.x / 2.0 might just respond with SRU_UNSUPPORTED_OPERATION and not
+        // parse/validate request parameters, this should be ok
+        if (hasDiagnostic(res, SRU_UNSUPPORTED_OPERATION)) {
+            assertTrue(context.getFCSTestProfile() != FCSTestProfile.CLARIN_FCS_LEGACY, "Diagnostics '"
+                    + SRU_UNSUPPORTED_OPERATION + "' (SRU_UNSUPPORTED_OPERATION) is not valid for Legacy FCS!");
+            return;
+        }
+
         assertHasDiagnostic(res, "info:srw/diagnostic/1/6");
     }
 
