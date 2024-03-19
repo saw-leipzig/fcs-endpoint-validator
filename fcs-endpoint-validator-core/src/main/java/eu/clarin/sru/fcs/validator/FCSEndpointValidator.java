@@ -52,6 +52,7 @@ import eu.clarin.sru.fcs.validator.tests.FCSSearchLexicalTest;
 import eu.clarin.sru.fcs.validator.tests.FCSSearchTest;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCS10;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCS20;
+import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCSForAggregator;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.ClarinFCSLegacy;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.LexFCS;
 
@@ -176,6 +177,9 @@ public class FCSEndpointValidator {
                     break;
                 case CLARIN_FCS_LEGACY:
                     ldRequestBuilder.filters(includeTags(ClarinFCSLegacy.name));
+                    break;
+                case AGGREGATOR_MIN_FCS:
+                    ldRequestBuilder.filters(includeTags(ClarinFCSForAggregator.name));
                     break;
                 default:
                     break;

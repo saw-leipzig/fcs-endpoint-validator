@@ -19,6 +19,7 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 public class LogCapturingAppender extends AbstractAppender implements Recorder<LogEvent> {
     protected static final String DEFAULT_APPENDER_NAME = LogCapturingAppender.class.getName();
     protected static final String PACKAGE_SRUFCS_VALIDATOR = "eu.clarin.sru.fcs.validator";
+    protected static final String PACKAGE_SRUFCS_VALIDATOR_TESTS = PACKAGE_SRUFCS_VALIDATOR + ".tests";
     protected static final String PACKAGE_SRUFCS_LIB = "eu.clarin.sru";
 
     protected final GenericRecorder<LogEvent> recorder = new GenericRecorder<LogEvent>();
@@ -32,12 +33,22 @@ public class LogCapturingAppender extends AbstractAppender implements Recorder<L
 
     @Override
     public void append(LogEvent event) {
-        // we ignore logs from ourselves
+        boolean ignore = false;
+
+        // we ignore logs from ourselves (AND if NOT from the tests)
         if (event.getLoggerName().startsWith(PACKAGE_SRUFCS_VALIDATOR + ".")) {
-            return;
+            ignore = true;
         }
-        // and only want to capture events from the SRU/FCS libs (?)
+        // and only want to capture events from the SRU/FCS libs
         if (!event.getLoggerName().startsWith(PACKAGE_SRUFCS_LIB + ".")) {
+            ignore = true;
+        }
+        // BUT we DO also want to capture output from the tests, too
+        if (event.getLoggerName().startsWith(PACKAGE_SRUFCS_VALIDATOR_TESTS + ".")) {
+            ignore = false;
+        }
+
+        if (ignore) {
             return;
         }
 
@@ -85,13 +96,17 @@ public class LogCapturingAppender extends AbstractAppender implements Recorder<L
 
             // check for child loggers
             for (final LoggerConfig childLoggerConfig : config.getLoggers().values()) {
-                if (childLoggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR)
-                        || childLoggerConfig.getName().startsWith(PACKAGE_SRUFCS_VALIDATOR + ".")) {
+                if ((childLoggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR)
+                        || childLoggerConfig.getName().startsWith(PACKAGE_SRUFCS_VALIDATOR + "."))
+                        && !(childLoggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR_TESTS)
+                                || childLoggerConfig.getName().startsWith(PACKAGE_SRUFCS_VALIDATOR_TESTS + "."))) {
                     continue;
                 }
                 // TODO: this does not yet work as we want -- no console output
                 // do we need to add the parents (and skip over PACKAGE_SRUFCS_LIB?)
-                if (childLoggerConfig.getName().startsWith(PACKAGE_SRUFCS_LIB + ".")) {
+                if (childLoggerConfig.getName().startsWith(PACKAGE_SRUFCS_LIB + ".")
+                        || childLoggerConfig.getName().startsWith(PACKAGE_SRUFCS_VALIDATOR_TESTS + ".")
+                        || childLoggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR_TESTS)) {
                     // we need to increase the level, otherwise nothing can't be captured on certain
                     // levels -- this also means that any other defined logger will have its level
                     // increase too (--> much more output in console/logfile)
@@ -103,11 +118,14 @@ public class LogCapturingAppender extends AbstractAppender implements Recorder<L
         } else {
             // check if we have the logger (we want to capture) already defined
             for (final LoggerConfig loggerConfig : config.getLoggers().values()) {
-                if (loggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR)
-                        || loggerConfig.getName().startsWith(PACKAGE_SRUFCS_VALIDATOR + ".")) {
+                if ((loggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR)
+                        || loggerConfig.getName().startsWith(PACKAGE_SRUFCS_VALIDATOR + "."))
+                        && !(loggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR_TESTS)
+                                || loggerConfig.getName().startsWith(PACKAGE_SRUFCS_VALIDATOR_TESTS + "."))) {
                     continue;
                 }
-                if (loggerConfig.getName().equals(PACKAGE_SRUFCS_LIB)) {
+                if (loggerConfig.getName().equals(PACKAGE_SRUFCS_LIB)
+                        || loggerConfig.getName().equals(PACKAGE_SRUFCS_VALIDATOR_TESTS)) {
                     // we need to increase the level, otherwise nothing can't be captured on certain
                     // levels this also means that any other defined logger will have its level
                     // increase too (--> much more output in console/logfile)

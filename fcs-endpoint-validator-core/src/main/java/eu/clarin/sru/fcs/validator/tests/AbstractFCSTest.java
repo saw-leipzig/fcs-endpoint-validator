@@ -84,6 +84,14 @@ public abstract class AbstractFCSTest {
 
     @Target({ ElementType.TYPE, ElementType.METHOD })
     @Retention(RetentionPolicy.RUNTIME)
+    @Tag("fcs-aggregator")
+    public static @interface ClarinFCSForAggregator {
+        public static final String name = "fcs-aggregator";
+        public static final FCSTestProfile profile = FCSTestProfile.AGGREGATOR_MIN_FCS;
+    }
+
+    @Target({ ElementType.TYPE, ElementType.METHOD })
+    @Retention(RetentionPolicy.RUNTIME)
     @ClarinFCS20
     @ClarinFCS10
     @ClarinFCSLegacy

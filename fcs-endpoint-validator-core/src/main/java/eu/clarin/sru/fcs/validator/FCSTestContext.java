@@ -132,13 +132,19 @@ public class FCSTestContext {
             case CLARIN_FCS_LEGACY:
                 version = SRUVersion.VERSION_1_2;
                 break;
+            case AGGREGATOR_MIN_FCS:
+                // NOTE: we probably only want new clients to start with FCS 2.0
+                version = SRUVersion.VERSION_2_0;
+                break;
         }
 
         builder.setDefaultVersion(version).setRequestAuthenticator(null);
 
         boolean legacySupport = (profile == FCSTestProfile.CLARIN_FCS_LEGACY
-                || (!strictMode && profile == FCSTestProfile.CLARIN_FCS_1_0));
-        boolean fullLegacyCompatMode = (profile == FCSTestProfile.CLARIN_FCS_LEGACY);
+                || (!strictMode && profile == FCSTestProfile.CLARIN_FCS_1_0)
+                || (profile == FCSTestProfile.AGGREGATOR_MIN_FCS));
+        boolean fullLegacyCompatMode = ((profile == FCSTestProfile.CLARIN_FCS_LEGACY)
+                || (profile == FCSTestProfile.AGGREGATOR_MIN_FCS));
 
         // record and data view parsers
         // see eu.clarin.sru.client.fcs.ClarinFCSClientBuilder

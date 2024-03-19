@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.validator.tests;
 
+import static eu.clarin.sru.client.fcs.ClarinFCSConstants.CAPABILITY_ADVANCED_SEARCH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -18,10 +19,13 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUExplainRequest;
 import eu.clarin.sru.client.SRUExplainResponse;
+import eu.clarin.sru.client.SRUExtraResponseData;
 import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
@@ -36,6 +40,8 @@ import eu.clarin.sru.fcs.validator.util.LanguagesISO693;
 @Explain
 @DisplayName("Explain")
 public class FCSExplainTest extends AbstractFCSTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(FCSExplainTest.class);
 
     // ----------------------------------------------------------------------
     // SRU: default explain response on base URI
@@ -355,6 +361,60 @@ public class FCSExplainTest extends AbstractFCSTest {
 
             assertValidLanguageCodesForResourcesRecursive(resource.getSubResources());
         }
+    }
+
+    // ----------------------------------------------------------------------
+    // Aggregator Minimum Compliance
+    // NOTE: legacy fcs with scan is not tested here
+    // TODO: do we still want to test FCS 1.0?
+
+    @Test
+    @Order(1900)
+    @ClarinFCS10
+    @ClarinFCS20
+    @LexFCS
+    @ClarinFCSForAggregator
+    @DisplayName("Check for valid Explain response required for Minimum FCS Aggregator Compliance")
+    @Expected("Valid Explain response with at least one resource")
+    void doExplainForFCSAggregator(FCSTestContext context) throws SRUClientException {
+        // assumeTrue(context.getFCSTestProfile() == FCSTestProfile.AGGREGATOR_MIN_FCS,
+        //         "Only checked for Minimum FCS Aggregator Compliance.");
+
+        // see ScanCrawler#start()
+        SRUExplainRequest req = context.createExplainRequest();
+        req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
+        req.setParseRecordDataEnabled(true);
+        SRUExplainResponse res = context.getClient().explain(req);
+
+        // NOTE: we will fail if we do not find any resources!
+        // see ScanCrawler#onSuccess()
+        assertTrue(res.hasExtraResponseData(), "Expected ExtraResponseData on Explain response");
+        logger.debug("Explain request url: {}", res.getRequest().getRequestedURI());
+
+        boolean foundClarinFCSEndpointDescription = false;
+        for (SRUExtraResponseData data : res.getExtraResponseData()) {
+            if (data instanceof ClarinFCSEndpointDescription) {
+                foundClarinFCSEndpointDescription = true;
+
+                ClarinFCSEndpointDescription desc = (ClarinFCSEndpointDescription) data;
+
+                if (desc.getVersion() == 2) {
+                    logger.info("Would set endpoint FCS protocol version to '2'");
+                    if (desc.getCapabilities().contains(CAPABILITY_ADVANCED_SEARCH)) {
+                        logger.info("Would add 'adv' search capability to endpoint");
+                    }
+                } else {
+                    logger.info("Would set endpoint FCS protocol version to '1'");
+                }
+
+                assertNotNull(desc.getResources());
+                // NOTE: we do not recurse through those resources for now
+            }
+        }
+        assertTrue(foundClarinFCSEndpointDescription,
+                "ExtraResponseData with a ClarinFCSEndpointDescription is required!");
+        // NOTE: it should theoretically be allowed to return multiple
+        // ClarinFCSEndpointDescription records
     }
 
 }

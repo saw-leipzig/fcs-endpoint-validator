@@ -536,10 +536,11 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         selTestProfile.setEmptySelectionCaption("Auto detect");
         selTestProfile.setItemLabelGenerator(profile -> (profile == null) ? "Auto detect" : profile.toDisplayString());
         selTestProfile.setItems(FCSTestProfile.CLARIN_FCS_2_0, FCSTestProfile.CLARIN_FCS_1_0,
-                FCSTestProfile.CLARIN_FCS_LEGACY, FCSTestProfile.LEX_FCS);
+                FCSTestProfile.CLARIN_FCS_LEGACY, FCSTestProfile.LEX_FCS, FCSTestProfile.AGGREGATOR_MIN_FCS);
         selTestProfile.addComponentAtIndex(1, new Hr());
         selTestProfile.addComponents(FCSTestProfile.CLARIN_FCS_2_0, new Hr());
         selTestProfile.addComponents(FCSTestProfile.CLARIN_FCS_LEGACY, new Hr());
+        selTestProfile.addComponents(FCSTestProfile.LEX_FCS, new Hr());
         selTestProfile.setRenderer(new ComponentRenderer<>(profile -> {
             FlexLayout wrapper = new FlexLayout();
             wrapper.setAlignItems(Alignment.CENTER);
@@ -557,6 +558,11 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
                     label = "Experimental FCS version";
                     icon = VaadinIcon.TOOLS.create();
                     icon.getElement().getThemeList().add("badge contrast");
+                    break;
+                case AGGREGATOR_MIN_FCS:
+                    label = "Minimum Compliance for FCS Aggregator";
+                    icon = VaadinIcon.BOLT.create();
+                    icon.getElement().getThemeList().add("badge warning");
                     break;
                 default:
                     label = "Legacy or unknown FCS version";

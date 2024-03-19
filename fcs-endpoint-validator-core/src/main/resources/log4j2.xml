@@ -12,13 +12,25 @@
     </Appenders>
 
     <Loggers>
+        <!-- IMPORTANT: DO NOT CHANGE -->
+        <!-- NOTE: due to log capturing, output for more verbose levels might still be written to console (or the main appender) -->
+        
         <!-- set log level to ALL to get logs from SRU/FCS libraries -->
         <!-- NOTE: if any loggers 'eu.clarin.sru' are defined in another way, always add additivity="true"!!! -->
         <!-- NOTE: the log level does not matter, for log capturing it will be increase to ALL to get everything -->
         <!-- <Logger name="eu.clarin.sru" level="info" additivity="true"></Logger> -->
         <!-- <Logger name="eu.clarin.sru.client" level="info" additivity="true"></Logger> -->
 
-        <!-- set log level for v -->
+        <!-- just added those here, not really required if there is not other log config changes -->
+        <Logger name="eu.clarin.sru" level="all" additivity="true"></Logger>
+        <Logger name="eu.clarin.sru.client" level="all" additivity="true"></Logger>
+
+        <!-- this is required, set additivity for test case loggers so output is not swallowed! -->
+        <Logger name="eu.clarin.sru.fcs.validator.tests" level="all" additivity="true"></Logger>
+        <!-- /IMPORTANT -->
+
+        <!-- YOU CAN CHANGE BELOW HERE ...-->
+        <!-- set log level for validator -->
         <Logger name="eu.clarin.sru.fcs.validator" level="info" additivity="false">
             <AppenderRef ref="Console" />
         </Logger>

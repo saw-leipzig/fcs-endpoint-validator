@@ -17,27 +17,24 @@
 package eu.clarin.sru.fcs.validator;
 
 public enum FCSTestProfile {
-    CLARIN_FCS_1_0(0),
-    CLARIN_FCS_2_0(1),
-    CLARIN_FCS_LEGACY(2),
-    LEX_FCS(3);
-
-    final int id;
-
-    private FCSTestProfile(final int id) {
-        this.id = id;
-    }
+    CLARIN_FCS_2_0,
+    CLARIN_FCS_1_0,
+    CLARIN_FCS_LEGACY,
+    LEX_FCS,
+    AGGREGATOR_MIN_FCS;
 
     public String toDisplayString() {
         switch (this) {
-            case CLARIN_FCS_1_0:
-                return "CLARIN FCS 1.0";
             case CLARIN_FCS_2_0:
                 return "CLARIN FCS 2.0";
+            case CLARIN_FCS_1_0:
+                return "CLARIN FCS 1.0";
             case CLARIN_FCS_LEGACY:
                 return "Legacy FCS";
             case LEX_FCS:
                 return "LexFCS";
+            case AGGREGATOR_MIN_FCS:
+                return "Minimum for FCS Aggregator";
             default:
                 return "";
         }
