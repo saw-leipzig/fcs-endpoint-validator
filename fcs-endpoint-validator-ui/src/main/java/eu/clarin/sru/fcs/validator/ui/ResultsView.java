@@ -4,9 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +49,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
@@ -66,6 +69,9 @@ public class ResultsView extends VerticalLayout {
     private static final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public static final String PATH_PREFIX_RESULTS = "results/";
+
+    public static final int MAX_TITLE_LENGTH = 255;
+    public static final int MAX_DESCRIPTION_LENGTH = 10 * 1024;
 
     private final FCSEndpointValidatorService fcsEndpointValidatorService;
     private final FCSEndpointValidationResult result;
@@ -149,49 +155,97 @@ public class ResultsView extends VerticalLayout {
         HorizontalLayout hlResultsHeader = new HorizontalLayout();
         hlResultsHeader.setSpacing(false);
         hlResultsHeader.setPadding(false);
-        hlResultsHeader.addClassName(Gap.XSMALL);
+        hlResultsHeader.addClassName(Gap.MEDIUM);
         hlResultsHeader.setWidth("100%");
         hlResultsHeader.setHeight("min-content");
-        hlResultsHeader.setJustifyContentMode(JustifyContentMode.CENTER);
-        hlResultsHeader.setAlignItems(Alignment.CENTER);
+        hlResultsHeader.setJustifyContentMode(JustifyContentMode.START);
+        hlResultsHeader.setAlignItems(Alignment.START);
+        hlResultsHeader.addClassNames(LumoUtility.FlexWrap.WRAP, LumoUtility.FlexDirection.ROW);
 
         VerticalLayout vlSummary = new VerticalLayout();
         vlSummary.setPadding(false);
-        vlSummary.addClassName(Gap.XSMALL);
+        vlSummary.setWidth("max-content");
+        vlSummary.addClassNames(Gap.XSMALL, LumoUtility.Margin.Right.AUTO);
         vlSummary.add(createResultsSummary());
         hlResultsHeader.add(vlSummary);
 
         if (fcsEndpointValidatorService != null && fcsEndpointValidatorService.canStoreFCSEndpointValidationResults()) {
-            hlResultsHeader.add(createActionButtons());
+            hlResultsHeader.add(createActionButtonsOrSavedResultsInfo());
         }
 
         return hlResultsHeader;
     }
 
-    protected Component createActionButtons() {
-        VerticalLayout vlButtons = new VerticalLayout();
-        vlButtons.addClassName(Gap.XSMALL);
-        vlButtons.addClassName(Padding.XSMALL);
-        vlButtons.setWidth("min-content");
-        vlButtons.setHeight("min-content");
-        vlButtons.setJustifyContentMode(JustifyContentMode.START);
-        vlButtons.setAlignItems(Alignment.CENTER);
+    protected Component createActionButtonsOrSavedResultsInfo() {
+        if (!result.isSaved()) {
+            VerticalLayout vlButtons = new VerticalLayout();
+            vlButtons.addClassName(Gap.XSMALL);
+            vlButtons.addClassName(Padding.XSMALL);
+            vlButtons.setWidth("max-content");
+            vlButtons.setHeight("min-content");
+            vlButtons.setJustifyContentMode(JustifyContentMode.START);
+            vlButtons.setAlignItems(Alignment.END);
 
-        btnSaveResults = new Button();
-        btnSaveResults.setText("Save Results");
-        btnSaveResults.setWidth("min-content");
-        btnSaveResults.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        btnSaveResults.setIcon(VaadinIcon.BOOKMARK.create());
-        btnSaveResults.setDisableOnClick(true);
-        btnSaveResults.addClickShortcut(Key.SAVE);
-        vlButtons.add(btnSaveResults);
+            btnSaveResults = new Button();
+            btnSaveResults.setText("Save Results");
+            btnSaveResults.setWidth("min-content");
+            btnSaveResults.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            btnSaveResults.setIcon(VaadinIcon.BOOKMARK.create());
+            btnSaveResults.setDisableOnClick(true);
+            btnSaveResults.addClickShortcut(Key.SAVE);
+            vlButtons.add(btnSaveResults);
 
-        if (result.isSaved()) {
-            btnSaveResults.setText("Already saved!");
-            btnSaveResults.setEnabled(false);
+            return vlButtons;
+        } else {
+            VerticalLayout vlSaveInfo = new VerticalLayout();
+            vlSaveInfo.setPadding(false);
+            vlSaveInfo.addClassName(Gap.XSMALL);
+            vlSaveInfo.setWidth("max-content");
+            vlSaveInfo.setHeight("min-content");
+            vlSaveInfo.setJustifyContentMode(JustifyContentMode.START);
+            vlSaveInfo.setAlignItems(Alignment.START);
+
+            // DateTimeFormatter formatter = DateTimeFormatter
+            // .ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+            DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withZone(ZoneId.systemDefault());
+            Span txtSaveDate = new Span(formatter.format(result.getDatetime()));
+            txtSaveDate.addClassName(LumoUtility.TextColor.WARNING);
+            txtSaveDate.setTitle("Datetime when FCS endpoint was evaluated");
+            Span txtSaveSize = new Span(String.format(" (%s)", formatSize(result.getSaveSize())));
+            txtSaveSize.addClassName(LumoUtility.TextColor.TERTIARY);
+            txtSaveSize.setTitle("Size of stored validation result");
+
+            H3 txtSaveHeader = new H3();
+            txtSaveHeader.getStyle().set("font-size", "var(--lumo-font-size-l)");
+            txtSaveHeader.add("Validation result saved on ");
+            txtSaveHeader.add(txtSaveDate);
+            txtSaveHeader.add(txtSaveSize);
+            txtSaveHeader.add(":");
+            vlSaveInfo.add(txtSaveHeader);
+
+            FormLayout flSaveInfo = new FormLayout();
+            flSaveInfo.setWidth("max-content");
+            flSaveInfo.setResponsiveSteps(new ResponsiveStep("0", 1));
+            flSaveInfo.getStyle().set("--vaadin-form-item-label-width", "5em");
+
+            TextField txtTitle = new TextField();
+            txtTitle.setValue(result.getTitle());
+            txtTitle.setReadOnly(true);
+            txtTitle.setWidth("100%");
+            flSaveInfo.addFormItem(txtTitle, "Title");
+
+            TextArea txtDescription = new TextArea();
+            txtDescription.setValue(result.getDescription());
+            txtDescription.setReadOnly(true);
+            txtDescription.setWidth("100%");
+            txtDescription.setMaxHeight("4rem");
+            flSaveInfo.addFormItem(txtDescription, "Description");
+
+            vlSaveInfo.add(flSaveInfo);
+
+            return vlSaveInfo;
         }
-
-        return vlButtons;
     }
 
     protected List<Component> createResultsSummary() {
@@ -203,7 +257,9 @@ public class ResultsView extends VerticalLayout {
         txtResultsFor.add(
                 new Anchor(request.getBaseURI(), request.getBaseURI(), AnchorTarget.BLANK));
         txtResultsFor.add(" (using test profile ");
-        txtResultsFor.add(request.getFCSTestProfile().toDisplayString());
+        Span txtTestProfile = new Span(request.getFCSTestProfile().toDisplayString());
+        txtTestProfile.addClassName(LumoUtility.TextColor.WARNING);
+        txtResultsFor.add(txtTestProfile);
         txtResultsFor.add("):");
         txtResultsFor.getStyle().set("font-size", "var(--lumo-font-size-l)");
 
@@ -472,13 +528,19 @@ public class ResultsView extends VerticalLayout {
         txtTitle.setClearButtonVisible(true);
         txtTitle.setRequiredIndicatorVisible(true);
         // txtTitle.setPrefixComponent(VaadinIcon.LINK.create());
-        txtTitle.setMaxLength(255);
+        txtTitle.setMaxLength(MAX_TITLE_LENGTH);
         txtTitle.setPlaceholder("Please enter a short title for your validation result.");
+        txtTitle.setValueChangeMode(ValueChangeMode.EAGER);
+        txtTitle.addValueChangeListener(e -> e.getSource().setHelperText(e.getValue().length() + "/" + MAX_TITLE_LENGTH));
         flInputs.add(txtTitle);
 
         TextArea txtDescription = new TextArea("Description");
         txtDescription.setClearButtonVisible(true);
+        txtDescription.setMaxLength(MAX_DESCRIPTION_LENGTH);
         txtDescription.setPlaceholder("Optionally add an longer description for your validation results.");
+        txtDescription.setValueChangeMode(ValueChangeMode.EAGER);
+        txtDescription.addValueChangeListener(
+                e -> e.getSource().setHelperText(e.getValue().length() + "/" + MAX_DESCRIPTION_LENGTH));
         flInputs.add(txtDescription);
 
         dlgSaveResultInputs.add(flInputs);
@@ -487,6 +549,7 @@ public class ResultsView extends VerticalLayout {
 
         Button saveButton = new Button();
         saveButton.setText("Save");
+        saveButton.setEnabled(false);
         saveButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button cancelButton = new Button();
@@ -495,10 +558,17 @@ public class ResultsView extends VerticalLayout {
         dlgSaveResultInputs.getFooter().add(cancelButton);
         dlgSaveResultInputs.getFooter().add(saveButton);
 
+        txtTitle.addValueChangeListener(e -> saveButton.setEnabled(!e.getValue().isBlank()));
+
         cancelButton.addClickListener(e -> dlgSaveResultInputs.close());
         // TODO: or create custom event and extract save logic
         saveButton.addClickListener(e -> {
             logger.info("Save results ...");
+
+            if (txtTitle.getValue().isBlank()) {
+                dlgSaveResultInputs.close();
+                return;
+            }
 
             if (!txtTitle.getValue().isBlank()) {
                 result.setTitle(txtTitle.getValue().trim());
@@ -537,6 +607,34 @@ public class ResultsView extends VerticalLayout {
         } catch (XMLStreamException | FactoryConfigurationError e) {
             return null;
         }
+    }
+
+    private static String formatSize(int size) {
+        // see: https://www.baeldung.com/java-human-readable-byte-size
+
+        if (size < 0) {
+            throw new IllegalArgumentException("Invalid file size: " + size);
+        }
+
+        final long BYTE = 1L;
+        final long KiB = BYTE << 10;
+        final long MiB = KiB << 10;
+
+        final DecimalFormat DEC_FORMAT = new DecimalFormat("#.##");
+
+        final long divider;
+        final String unitName;
+        if (size >= MiB) {
+            divider = MiB;
+            unitName = "MiB";
+        } else if (size >= KiB) {
+            divider = KiB;
+            unitName = "KiB";
+        } else {
+            divider = BYTE;
+            unitName = "Bytes";
+        }
+        return DEC_FORMAT.format((double) size / divider) + " " + unitName;
     }
 
     // ----------------------------------------------------------------------
