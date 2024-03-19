@@ -20,7 +20,9 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.pattern.NameAbbreviator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +69,7 @@ public class ResultsView extends VerticalLayout {
 
     // DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private static final NameAbbreviator logNameConverter = NameAbbreviator.getAbbreviator("1.");
 
     public static final String PATH_PREFIX_RESULTS = "results/";
 
@@ -415,9 +418,31 @@ public class ResultsView extends VerticalLayout {
                     LumoUtility.TextColor.TERTIARY);
 
             for (LogEvent log : testResult.getLogs()) {
-                resultDetailLogs.add(new Span(String.format("[%s] %s",
-                        dateFmt.format(Instant.ofEpochMilli(log.getTimeMillis()).atZone(ZoneId.systemDefault())),
-                        log.getMessage().getFormattedMessage())));
+                Span txtLogMsgLevel = new Span(String.format("[%s] ", log.getLevel().name().charAt(0)));
+                txtLogMsgLevel.setTitle(log.getLevel().name());
+
+                Span txtLogMsgDatetime = new Span(String.format("[%s] ",
+                        dateFmt.format(Instant.ofEpochMilli(log.getTimeMillis()).atZone(ZoneId.systemDefault()))));
+
+                Span txtLogMsgLogger = new Span(String.format("[%s] ", formatClassName(log.getLoggerName())));
+                txtLogMsgLogger.setTitle(log.getLoggerName());
+
+                Span txtLogMsgText = new Span(log.getMessage().getFormattedMessage());
+                txtLogMsgText.addClassName(LumoUtility.FontWeight.NORMAL);
+
+                Span txtLogMsg = new Span(txtLogMsgLevel, txtLogMsgDatetime, txtLogMsgLogger, txtLogMsgText);
+                txtLogMsg.addClassName(LumoUtility.FontWeight.LIGHT);
+
+                // txtLogMsg.addClassName(String.format("logmessage-%s",
+                // log.getLevel().name().toLowerCase()));
+
+                // highlight non-debug/-info messages
+                if (log.getLevel() == Level.WARN) {
+                    txtLogMsg.addClassName(LumoUtility.TextColor.WARNING);
+                } else if (log.getLevel() == Level.ERROR) {
+                    txtLogMsg.addClassName(LumoUtility.TextColor.ERROR);
+                }
+                resultDetailLogs.add(txtLogMsg);
             }
 
             resultDetail.add(resultDetailLogs);
@@ -531,7 +556,8 @@ public class ResultsView extends VerticalLayout {
         txtTitle.setMaxLength(MAX_TITLE_LENGTH);
         txtTitle.setPlaceholder("Please enter a short title for your validation result.");
         txtTitle.setValueChangeMode(ValueChangeMode.EAGER);
-        txtTitle.addValueChangeListener(e -> e.getSource().setHelperText(e.getValue().length() + "/" + MAX_TITLE_LENGTH));
+        txtTitle.addValueChangeListener(
+                e -> e.getSource().setHelperText(e.getValue().length() + "/" + MAX_TITLE_LENGTH));
         flInputs.add(txtTitle);
 
         TextArea txtDescription = new TextArea("Description");
@@ -609,6 +635,8 @@ public class ResultsView extends VerticalLayout {
         }
     }
 
+    // ----------------------------------------------------------------------
+
     private static String formatSize(int size) {
         // see: https://www.baeldung.com/java-human-readable-byte-size
 
@@ -635,6 +663,12 @@ public class ResultsView extends VerticalLayout {
             unitName = "Bytes";
         }
         return DEC_FORMAT.format((double) size / divider) + " " + unitName;
+    }
+
+    private static String formatClassName(String classname) {
+        StringBuilder buf = new StringBuilder();
+        logNameConverter.abbreviate(classname, buf);
+        return buf.toString();
     }
 
     // ----------------------------------------------------------------------
