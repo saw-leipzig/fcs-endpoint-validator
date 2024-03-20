@@ -16,28 +16,37 @@
  */
 package eu.clarin.sru.fcs.validator;
 
+import eu.clarin.sru.client.SRUVersion;
+
 public enum FCSTestProfile {
-    CLARIN_FCS_2_0,
-    CLARIN_FCS_1_0,
-    CLARIN_FCS_LEGACY,
-    LEX_FCS,
-    AGGREGATOR_MIN_FCS;
+    CLARIN_FCS_2_0("CLARIN FCS 2.0", SRUVersion.VERSION_2_0),
+    CLARIN_FCS_1_0("CLARIN FCS 1.0", SRUVersion.VERSION_1_2),
+    CLARIN_FCS_LEGACY("Legacy FCS", SRUVersion.VERSION_1_2),
+
+    // Work-in-Progress
+    LEX_FCS("LexFCS", SRUVersion.VERSION_2_0),
+
+    // NOTE: we probably only want new clients to start with FCS 2.0
+    AGGREGATOR_MIN_FCS("Minimum for FCS Aggregator", SRUVersion.VERSION_2_0);
+
+    final SRUVersion version;
+    final String displayString;
+
+    private FCSTestProfile(String displString, SRUVersion version) {
+        this.displayString = displString;
+        this.version = version;
+    }
+
+    public SRUVersion getSRUVersion() {
+        return version;
+    }
+
+    public String getDisplayString() {
+        return displayString;
+    }
 
     public String toDisplayString() {
-        switch (this) {
-            case CLARIN_FCS_2_0:
-                return "CLARIN FCS 2.0";
-            case CLARIN_FCS_1_0:
-                return "CLARIN FCS 1.0";
-            case CLARIN_FCS_LEGACY:
-                return "Legacy FCS";
-            case LEX_FCS:
-                return "LexFCS";
-            case AGGREGATOR_MIN_FCS:
-                return "Minimum for FCS Aggregator";
-            default:
-                return "";
-        }
+        return this.displayString;
     }
 
 } // enum FCSTestProfile

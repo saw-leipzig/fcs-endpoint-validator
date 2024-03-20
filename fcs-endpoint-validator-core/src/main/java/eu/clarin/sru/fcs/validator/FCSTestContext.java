@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 
@@ -11,6 +12,7 @@ import eu.clarin.sru.client.SRUClient;
 import eu.clarin.sru.client.SRUClientConfig;
 import eu.clarin.sru.client.SRUClientConstants;
 import eu.clarin.sru.client.SRUExplainRequest;
+import eu.clarin.sru.client.SRURequestAuthenticator;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUVersion;
@@ -33,14 +35,17 @@ public class FCSTestContext {
     private final String baseURI;
     private final boolean strictMode;
     private final int indentResponse;
+    private final SRURequestAuthenticator requestAuthenticator;
     private final CloseableHttpClient httpClient;
 
     private final String userSearchTerm;
+    private final String[] userResourcePids;
 
     // ----------------------------------------------------------------------
 
-    public FCSTestContext(FCSTestProfile profile, String baseURI, boolean strictMode, CloseableHttpClient httpClient,
-            String userSearchTerm, int indentResponse) {
+    public FCSTestContext(FCSTestProfile profile, String baseURI, boolean strictMode,
+            SRURequestAuthenticator requestAuthenticator, CloseableHttpClient httpClient, String userSearchTerm,
+            String[] userResourcePids, int indentResponse) {
         if (profile == null) {
             throw new NullPointerException("profile == null");
         }
@@ -52,9 +57,11 @@ public class FCSTestContext {
         this.baseURI = baseURI;
         this.strictMode = strictMode;
         this.indentResponse = indentResponse;
+        this.requestAuthenticator = requestAuthenticator;
         this.httpClient = httpClient;
 
         this.userSearchTerm = userSearchTerm;
+        this.userResourcePids = userResourcePids;
     }
 
     public FCSTestProfile getFCSTestProfile() {
@@ -73,6 +80,10 @@ public class FCSTestContext {
         return indentResponse;
     }
 
+    public SRURequestAuthenticator getSRURequestAuthenticator() {
+        return requestAuthenticator;
+    }
+
     public CloseableHttpClient getHttpClient() {
         return httpClient;
     }
@@ -81,6 +92,10 @@ public class FCSTestContext {
 
     public String getUserSearchTerm() {
         return userSearchTerm;
+    }
+
+    public String[] getUserResourcePids() {
+        return userResourcePids;
     }
 
     // ----------------------------------------------------------------------
@@ -116,29 +131,11 @@ public class FCSTestContext {
 
     @SuppressWarnings("deprecation")
     public static SRUClientConfig buildSRUClientConfig(FCSTestProfile profile, boolean strictMode,
-            CloseableHttpClient httpClient) {
+            SRURequestAuthenticator requestAuthenticator, CloseableHttpClient httpClient) {
         final SRUClientConfig.Builder builder = new SRUClientConfig.Builder();
 
-        // SRU version
-        SRUVersion version = SRUVersion.VERSION_1_2;
-        switch (profile) {
-            case LEX_FCS:
-                /* $FALL-THROUGH$ */
-            case CLARIN_FCS_2_0:
-                version = SRUVersion.VERSION_2_0;
-                break;
-            case CLARIN_FCS_1_0:
-                /* $FALL-THROUGH$ */
-            case CLARIN_FCS_LEGACY:
-                version = SRUVersion.VERSION_1_2;
-                break;
-            case AGGREGATOR_MIN_FCS:
-                // NOTE: we probably only want new clients to start with FCS 2.0
-                version = SRUVersion.VERSION_2_0;
-                break;
-        }
-
-        builder.setDefaultVersion(version).setRequestAuthenticator(null);
+        builder.setDefaultVersion(Optional.ofNullable(profile.getSRUVersion()).orElse(SRUVersion.VERSION_1_2));
+        builder.setRequestAuthenticator(requestAuthenticator);
 
         boolean legacySupport = (profile == FCSTestProfile.CLARIN_FCS_LEGACY
                 || (!strictMode && profile == FCSTestProfile.CLARIN_FCS_1_0)
@@ -169,7 +166,7 @@ public class FCSTestContext {
     }
 
     public SRUClient getClient() {
-        return new SRUClient(buildSRUClientConfig(profile, strictMode, httpClient));
+        return new SRUClient(buildSRUClientConfig(profile, strictMode, requestAuthenticator, httpClient));
     }
 
     // ----------------------------------------------------------------------

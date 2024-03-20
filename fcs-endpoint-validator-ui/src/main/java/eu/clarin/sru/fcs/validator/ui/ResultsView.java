@@ -70,6 +70,10 @@ public class ResultsView extends VerticalLayout {
 
     // DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    // private static final DateTimeFormatter savedDateFmt = DateTimeFormatter
+    // .ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter savedDateFmt = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+            .withZone(ZoneId.systemDefault());
     private static final NameAbbreviator logNameConverter = NameAbbreviator.getAbbreviator("1.");
 
     public static final String PATH_PREFIX_RESULTS = "results/";
@@ -225,11 +229,7 @@ public class ResultsView extends VerticalLayout {
             vlSaveInfo.setJustifyContentMode(JustifyContentMode.START);
             vlSaveInfo.setAlignItems(Alignment.START);
 
-            // DateTimeFormatter formatter = DateTimeFormatter
-            // .ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault());
-            DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-                    .withZone(ZoneId.systemDefault());
-            Span txtSaveDate = new Span(formatter.format(result.getDatetime()));
+            Span txtSaveDate = new Span(savedDateFmt.format(result.getDatetime()));
             txtSaveDate.addClassName(LumoUtility.TextColor.WARNING);
             txtSaveDate.setTitle("Datetime when FCS endpoint was evaluated");
             Span txtSaveSize = new Span(String.format(" (%s)", formatSize(result.getSaveSize())));
@@ -559,8 +559,8 @@ public class ResultsView extends VerticalLayout {
 
         // some details
 
-        dlgSaveResultInputs.add(new Span(
-                String.format("Validation request from %s.", result.getDatetime().truncatedTo(ChronoUnit.SECONDS))));
+        dlgSaveResultInputs.add(new Span(String.format("Validation request from %s.",
+                savedDateFmt.format(result.getDatetime().truncatedTo(ChronoUnit.SECONDS)))));
 
         // inputs
 

@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import eu.clarin.sru.client.SRURequestAuthenticator;
+
 public class FCSTestContextFactory {
 
     // properties for each FCSTestContext
@@ -13,9 +15,11 @@ public class FCSTestContextFactory {
     private String baseURI;
     private boolean strictMode = FCSTestContext.DEFAULT_STRICT_MODE;
     private int indentResponse = FCSTestContext.DEFAULT_INDENT_RESPONSE;
+    private SRURequestAuthenticator requestAuthenticator = null;
     private CloseableHttpClient httpClient;
 
     private String userSearchTerm;
+    private String[] userResourcePids;
 
     // ----------------------------------------------------------------------
 
@@ -65,6 +69,14 @@ public class FCSTestContextFactory {
         this.httpClient = httpClient;
     }
 
+    public SRURequestAuthenticator getSRURequestAuthenticator() {
+        return requestAuthenticator;
+    }
+
+    public void setSRURequestAuthenticator(SRURequestAuthenticator requestAuthenticator) {
+        this.requestAuthenticator = requestAuthenticator;
+    }
+
     // ----------------------------------------------------------------------
 
     public String getUserSearchTerm() {
@@ -74,6 +86,15 @@ public class FCSTestContextFactory {
     public void setUserSearchTerm(String userSearchTerm) {
         this.userSearchTerm = userSearchTerm;
     }
+
+    public String[] getUserResourcePids() {
+        return userResourcePids;
+    }
+
+    public void setUserResourcePids(String[] userResourcePids) {
+        this.userResourcePids = userResourcePids;
+    }
+    // TODO: or dynamic with addResource(pid) to build a list?
 
     // ----------------------------------------------------------------------
 
@@ -129,8 +150,8 @@ public class FCSTestContextFactory {
             testHttpClient = FCSTestHttpClientFactory.getInstance().newClient();
         }
 
-        final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, testHttpClient, userSearchTerm,
-                indentResponse);
+        final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, requestAuthenticator,
+                testHttpClient, userSearchTerm, userResourcePids, indentResponse);
         if (properties != null) {
             for (Map.Entry<String, Object> property : properties.entrySet()) {
                 context.setProperty(property.getKey(), property.getValue());

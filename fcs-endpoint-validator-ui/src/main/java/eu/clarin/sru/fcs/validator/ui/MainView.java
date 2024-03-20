@@ -101,6 +101,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     Select<Integer> selIndentResponse;
     Select<Integer> selConnectTimeout;
     Select<Integer> selSocketTimeout;
+    Checkbox chkSendAuthInfo;
 
     // ----------------------------------------------------------------------
 

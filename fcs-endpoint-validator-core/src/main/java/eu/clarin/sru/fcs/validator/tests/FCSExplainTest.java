@@ -374,11 +374,12 @@ public class FCSExplainTest extends AbstractFCSTest {
     @ClarinFCS20
     @LexFCS
     @ClarinFCSForAggregator
+    @Category("explain (aggregator)")
     @DisplayName("Check for valid Explain response required for Minimum FCS Aggregator Compliance")
     @Expected("Valid Explain response with at least one resource")
     void doExplainForFCSAggregator(FCSTestContext context) throws SRUClientException {
         // assumeTrue(context.getFCSTestProfile() == FCSTestProfile.AGGREGATOR_MIN_FCS,
-        //         "Only checked for Minimum FCS Aggregator Compliance.");
+        // "Only checked for Minimum FCS Aggregator Compliance.");
 
         // see ScanCrawler#start()
         SRUExplainRequest req = context.createExplainRequest();

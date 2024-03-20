@@ -1,5 +1,8 @@
 package eu.clarin.sru.fcs.validator.tests;
 
+import static eu.clarin.sru.fcs.validator.FCSTestConstants.SEARCH_RESOURCE_HANDLE_LEGACY_PARAMETER;
+import static eu.clarin.sru.fcs.validator.FCSTestConstants.SEARCH_RESOURCE_HANDLE_PARAMETER;
+import static eu.clarin.sru.fcs.validator.FCSTestConstants.SEARCH_RESOURCE_HANDLE_SEPARATOR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -8,13 +11,19 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
 
 import eu.clarin.sru.client.SRUClientConstants;
 import eu.clarin.sru.client.SRUClientException;
@@ -25,23 +34,28 @@ import eu.clarin.sru.client.SRURecord;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
+import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.DataView;
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
+import eu.clarin.sru.client.fcs.DataViewGenericDOM;
+import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.Resource;
 import eu.clarin.sru.client.fcs.Resource.ResourceFragment;
 import eu.clarin.sru.fcs.validator.FCSTestContext;
 import eu.clarin.sru.fcs.validator.FCSTestProfile;
-import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.SearchRetrieve;
+import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.SearchRetrieve;;
 
 @Order(3000)
 @SearchRetrieve
 @DisplayName("SearchRetrieve")
 public class FCSSearchTest extends AbstractFCSTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(FCSSearchTest.class);
 
     private static final String FCS_RECORD_SCHEMA = ClarinFCSRecordData.RECORD_SCHEMA;
     private static final String FCS10_RECORD_SCHEMA = "http://clarin.eu/fcs/1.0";
@@ -476,6 +490,142 @@ public class FCSSearchTest extends AbstractFCSTest {
                 assertTrue(foundAdv, "Endpoint did not provide mandatory Advanced (ADV) dataview in results");
             }
         }
+    }
+
+    // ----------------------------------------------------------------------
+    // Aggregator Minimum Compliance
+    // TODO: do we still want to test FCS 1.0/Legacy?
+
+    @Test
+    @Order(4900)
+    @ClarinFCSLegacy
+    @ClarinFCS10
+    @ClarinFCS20
+    @LexFCS
+    @ClarinFCSForAggregator
+    @Category("searchRetrieve (aggregator)")
+    @DisplayName("Check for valid SearchRetreive response required for Minimum FCS Aggregator Compliance")
+    @Expected("Valid SearchRetrieve response with at least one result")
+    void doSearchRetrieveForFCSAggregator(FCSTestContext context) throws SRUClientException {
+        // assumeTrue(context.getFCSTestProfile() == FCSTestProfile.AGGREGATOR_MIN_FCS,
+        // "Only checked for Minimum FCS Aggregator Compliance.");
+
+        boolean legacy = context.getFCSTestProfile() == FCSTestProfile.CLARIN_FCS_LEGACY;
+
+        // see Search#executeSearch(), Aggregator#startSearch, RestService#postSearch
+        SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
+        req.setVersion(Optional.ofNullable(context.getFCSTestProfile().getSRUVersion()).orElse(SRUVersion.VERSION_1_2));
+        req.setStartRecord(1);
+        req.setMaximumRecords(10);
+        req.setRecordSchema(legacy
+                ? LegacyClarinFCSRecordData.RECORD_SCHEMA
+                : ClarinFCSRecordData.RECORD_SCHEMA);
+
+        // add search term
+        req.setQuery(SRUClientConstants.QUERY_TYPE_CQL, escapeCQL(context.getUserSearchTerm()));
+
+        // add resource pid(s)
+        String[] pids = context.getUserResourcePids();
+        if (pids != null) {
+            req.setExtraRequestData(legacy
+                    ? SEARCH_RESOURCE_HANDLE_LEGACY_PARAMETER
+                    : SEARCH_RESOURCE_HANDLE_PARAMETER,
+                    Arrays.stream(pids).collect(Collectors.joining(SEARCH_RESOURCE_HANDLE_SEPARATOR)));
+        }
+
+        SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
+
+        // NOTE: we will fail if we do not get any results!
+        // see Search ~#~ onSuccess()
+
+        logger.info("searchRetrieve request url: {}", res.getRequest().getRequestedURI());
+
+        if (res.hasDiagnostics()) {
+            logger.error("diagnostic for url: {}", res.getRequest().getRequestedURI());
+            for (final SRUDiagnostic diagnostic : res.getDiagnostics()) {
+                logger.warn("Diagnostic: uri={}, message={}, detail={}", diagnostic.getURI(), diagnostic.getMessage(),
+                        diagnostic.getDetails());
+            }
+        }
+
+        assertTrue(res.hasRecords(), "Expected SearchRetrieve response to contain at least one record!");
+
+        int nextRecordPosition = 1;
+        for (final SRURecord record : res.getRecords()) {
+            nextRecordPosition += 1;
+            if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
+                final ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
+                final Resource resource = rd.getResource();
+                final String pid = resource.getPid();
+                final String reference = resource.getRef();
+                logger.debug("Resource ref={}, pid={}, dataViews={}", reference, pid, resource.hasDataViews());
+
+                int countDVs = 0;
+                if (resource.hasDataViews()) {
+                    countDVs += aggregatorSearchResultProcessDataViews(resource.getDataViews(), pid, reference);
+                }
+
+                if (resource.hasResourceFragments()) {
+                    for (final Resource.ResourceFragment fragment : resource.getResourceFragments()) {
+                        logger.debug("ResourceFragment: ref={}, pid={}, dataViews={}", fragment.getRef(),
+                                fragment.getPid(), fragment.hasDataViews());
+                        if (fragment.hasDataViews()) {
+                            countDVs += aggregatorSearchResultProcessDataViews(fragment.getDataViews(),
+                                    fragment.getPid() != null ? fragment.getPid() : pid,
+                                    fragment.getRef() != null ? fragment.getRef() : reference);
+                        }
+                    }
+                }
+                assertTrue(countDVs > 0, "SearchRetrieve should have at least returned one DataView!");
+                logger.info("Number of (non-generic) Data Views found: {}", countDVs);
+
+            } else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
+                SRUSurrogateRecordData r = (SRUSurrogateRecordData) record.getRecordData();
+                logger.warn("Surrogate diagnostic: uri={}, message={}, detail={}", r.getURI(), r.getMessage(),
+                        r.getDetails());
+            } else {
+                logger.warn("Unsupported schema: {}", record.getRecordSchema());
+            }
+        }
+
+        logger.info("NextRecordPosition (computed): {}", nextRecordPosition);
+        logger.info("NextRecordPosition (SearchRetrieve Response): {}", res.getNextRecordPosition());
+        logger.info("NumberOfRecords: {}", res.getNumberOfRecords());
+    }
+
+    // from eu.clarin.sru.fcs.aggregator.search.Result
+    private int aggregatorSearchResultProcessDataViews(List<DataView> dataViews, String pid, String reference) {
+        int countNonGenericDVs = 0;
+        for (DataView dataview : dataViews) {
+            if (dataview instanceof DataViewGenericDOM) {
+                final DataViewGenericDOM view = (DataViewGenericDOM) dataview;
+                final Node root = view.getDocument().getFirstChild();
+                logger.debug("DataView (generic dom): root element <{}> / {}", root.getNodeName(),
+                        root.getOwnerDocument().hashCode());
+            } else if (dataview instanceof DataViewGenericString) {
+                final DataViewGenericString view = (DataViewGenericString) dataview;
+                logger.debug("DataView (generic string): data = {}", view.getContent());
+            } else if (dataview instanceof DataViewHits) {
+                final DataViewHits hits = (DataViewHits) dataview;
+                logger.debug("DataViewHits: hit-count = {}", hits.getHitCount());
+                // Kwic kwic = new Kwic(hits, pid, reference);
+                // kwics.add(kwic);
+                // logger.debug("DataViewHits: {}", kwic.getFragments());
+                countNonGenericDVs += 1;
+            } else if (dataview instanceof DataViewAdvanced) {
+                final DataViewAdvanced adv = (DataViewAdvanced) dataview;
+                logger.debug("DataViewAdvanced: num-layers = {}", adv.getLayers().size());
+                // List<AdvancedLayer> advLayersSingleGroup = new ArrayList<>();
+                for (DataViewAdvanced.Layer layer : adv.getLayers()) {
+                    logger.debug("DataViewAdvanced layer: {}", adv.getUnit(), layer.getId());
+                    // AdvancedLayer aLayer = new AdvancedLayer(layer, pid, reference);
+                    // advLayersSingleGroup.add(aLayer);
+                }
+                // advLayers.add(advLayersSingleGroup);
+                countNonGenericDVs += 1;
+            }
+        }
+        return countNonGenericDVs;
     }
 
     // ----------------------------------------------------------------------
