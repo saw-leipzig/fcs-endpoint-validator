@@ -255,12 +255,14 @@ public class ResultsView extends VerticalLayout {
             txtTitle.setWidth("100%");
             flSaveInfo.addFormItem(txtTitle, "Title");
 
-            TextArea txtDescription = new TextArea();
-            txtDescription.setValue(Optional.ofNullable(result.getDescription()).orElse(""));
-            txtDescription.setReadOnly(true);
-            txtDescription.setWidth("100%");
-            txtDescription.setMaxHeight("4rem");
-            flSaveInfo.addFormItem(txtDescription, "Description");
+            if (!Optional.ofNullable(result.getDescription()).orElse("").isBlank()) {
+                TextArea txtDescription = new TextArea();
+                txtDescription.setValue(Optional.ofNullable(result.getDescription()).orElse(""));
+                txtDescription.setReadOnly(true);
+                txtDescription.setWidth("100%");
+                txtDescription.setMaxHeight("4rem");
+                flSaveInfo.addFormItem(txtDescription, "Description");
+            }
 
             vlSaveInfo.add(flSaveInfo);
 
