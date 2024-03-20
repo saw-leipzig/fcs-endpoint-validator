@@ -1,12 +1,13 @@
 package eu.clarin.sru.fcs.validator;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 public class FCSEndpointValidationRequest implements Serializable {
 
-    private static final long serialVersionUID = 2024_03_04L;
+    private static final long serialVersionUID = 2024_03_20L;
 
     private Map<String, Object> properties;
 
@@ -22,6 +23,8 @@ public class FCSEndpointValidationRequest implements Serializable {
     private String baseURI;
 
     private String userSearchTerm;
+    private String[] userResourcePids;
+    private String[] userDataViews;
 
     // ----------------------------------------------------------------------
 
@@ -99,6 +102,28 @@ public class FCSEndpointValidationRequest implements Serializable {
         this.userSearchTerm = userSearchTerm;
     }
 
+    public void setUserResourcePids(String[] userResourcePids) {
+        if (userResourcePids != null && userResourcePids.length == 0) {
+            userResourcePids = null;
+        }
+        this.userResourcePids = userResourcePids;
+    }
+
+    public String[] getUserResourcePids() {
+        return userResourcePids;
+    }
+
+    public void setUserDataViews(String[] userDataViews) {
+        if (userDataViews != null && userDataViews.length == 0) {
+            userDataViews = null;
+        }
+        this.userDataViews = userDataViews;
+    }
+
+    public String[] getUserDataViews() {
+        return userDataViews;
+    }
+
     // ----------------------------------------------------------------------
 
     public void setProperty(String key, Object value) {
@@ -143,7 +168,7 @@ public class FCSEndpointValidationRequest implements Serializable {
                 + ", socketTimeout=" + socketTimeout + ", performProbeRequest=" + performProbeRequest
                 + ", progressListener=" + progressListener + ", profile=" + profile + ", strictMode=" + strictMode
                 + ", indentResponse=" + indentResponse + ", baseURI=" + baseURI + ", userSearchTerm=" + userSearchTerm
-                + "]";
+                + ", userResourcePids=" + Arrays.toString(userResourcePids) + "]";
     }
 
 }

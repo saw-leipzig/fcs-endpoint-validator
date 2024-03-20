@@ -20,6 +20,7 @@ public class FCSTestContextFactory {
 
     private String userSearchTerm;
     private String[] userResourcePids;
+    private String[] userDataViews;
 
     // ----------------------------------------------------------------------
 
@@ -96,6 +97,15 @@ public class FCSTestContextFactory {
     }
     // TODO: or dynamic with addResource(pid) to build a list?
 
+    public String[] getUserDataViews() {
+        return userDataViews;
+    }
+
+    public void setUserDataViews(String[] userDataViews) {
+        this.userDataViews = userDataViews;
+    }
+    // TODO: or dynamic with addDataView(name) to build a list?
+
     // ----------------------------------------------------------------------
 
     public void setProperty(String key, Object value) {
@@ -151,7 +161,7 @@ public class FCSTestContextFactory {
         }
 
         final FCSTestContext context = new FCSTestContext(profile, baseURI, strictMode, requestAuthenticator,
-                testHttpClient, userSearchTerm, userResourcePids, indentResponse);
+                testHttpClient, userSearchTerm, userResourcePids, userDataViews, indentResponse);
         if (properties != null) {
             for (Map.Entry<String, Object> property : properties.entrySet()) {
                 context.setProperty(property.getKey(), property.getValue());

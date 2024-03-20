@@ -40,12 +40,13 @@ public class FCSTestContext {
 
     private final String userSearchTerm;
     private final String[] userResourcePids;
+    private final String[] userDataViews;
 
     // ----------------------------------------------------------------------
 
     public FCSTestContext(FCSTestProfile profile, String baseURI, boolean strictMode,
             SRURequestAuthenticator requestAuthenticator, CloseableHttpClient httpClient, String userSearchTerm,
-            String[] userResourcePids, int indentResponse) {
+            String[] userResourcePids, String[] userDataViews, int indentResponse) {
         if (profile == null) {
             throw new NullPointerException("profile == null");
         }
@@ -62,6 +63,7 @@ public class FCSTestContext {
 
         this.userSearchTerm = userSearchTerm;
         this.userResourcePids = userResourcePids;
+        this.userDataViews = userDataViews;
     }
 
     public FCSTestProfile getFCSTestProfile() {
@@ -96,6 +98,10 @@ public class FCSTestContext {
 
     public String[] getUserResourcePids() {
         return userResourcePids;
+    }
+
+    public String[] getUserDataViews() {
+        return userDataViews;
     }
 
     // ----------------------------------------------------------------------

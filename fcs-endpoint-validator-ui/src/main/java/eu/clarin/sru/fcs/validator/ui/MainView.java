@@ -5,13 +5,17 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +50,10 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.Location;
@@ -91,6 +97,8 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     public VerticalLayout mainContent;
     public TextField txtEndpointURL;
     public TextField txtSearchTerm;
+    public TextArea txtResourcePids;
+    public TextArea txtDataViewIds;
     public Button btnStart;
     public Button btnConfig;
 
@@ -190,6 +198,8 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
             request.setFCSTestProfile(selTestProfile.getValue());
             request.setStrictMode(chkStrictMode.getValue());
             request.setPerformProbeRequest(chkProbeRequest.getValue());
+            request.setUserResourcePids(textWithBreaksToArray(txtResourcePids.getValue()));
+            request.setUserDataViews(textWithBreaksToArray(txtDataViewIds.getValue()));
             request.setIndentResponse(selIndentResponse.getValue());
             request.setConnectTimeout(selConnectTimeout.getValue());
             request.setSocketTimeout(selSocketTimeout.getValue());
@@ -331,6 +341,11 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     public void setInputFromRequest(FCSEndpointValidationRequest request) {
         txtEndpointURL.setValue(request.getBaseURI());
         txtSearchTerm.setValue(request.getUserSearchTerm());
+        txtResourcePids
+                .setValue(Arrays.stream(Optional.ofNullable(request.getUserResourcePids()).orElse(new String[] {}))
+                        .collect(Collectors.joining("\n")));
+        txtDataViewIds.setValue(Arrays.stream(Optional.ofNullable(request.getUserDataViews()).orElse(new String[] {}))
+                .collect(Collectors.joining("\n")));
         selTestProfile.setValue(request.getFCSTestProfile());
         chkStrictMode.setValue(request.isStrictMode());
         chkProbeRequest.setValue(request.isPerformProbeRequest());
@@ -592,6 +607,26 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         chkProbeRequest.setValue(true);
         flAdditionInputs.add(chkProbeRequest);
 
+        txtResourcePids = new TextArea();
+        txtResourcePids.setLabel("Resource PIDs");
+        txtResourcePids.setTooltipText("Optional list of Resource PIDs for searchRetrieve requests."
+                + " Add one PID per line. Whitespaces are trimmed. PIDs will not be deduplicated.");
+        txtResourcePids.setClearButtonVisible(true);
+        txtResourcePids.setValueChangeMode(ValueChangeMode.EAGER);
+        txtResourcePids.addValueChangeListener(
+                e -> e.getSource().setHelperText(textWithBreaksToArray(e.getValue()).length + " Resource PIDs"));
+        flAdditionInputs.add(txtResourcePids);
+
+        txtDataViewIds = new TextArea();
+        txtDataViewIds.setLabel("DataView IDs");
+        txtDataViewIds.setTooltipText("Optional list of DataView IDs for searchRetrieve requests."
+                + " Add one ID per line. Whitespaces are trimmed. IDs will not be deduplicated.");
+        txtDataViewIds.setClearButtonVisible(true);
+        txtDataViewIds.setValueChangeMode(ValueChangeMode.EAGER);
+        txtDataViewIds.addValueChangeListener(
+                e -> e.getSource().setHelperText(textWithBreaksToArray(e.getValue()).length + " DataView IDs"));
+        flAdditionInputs.add(txtDataViewIds);
+
         selIndentResponse = new Select<>();
         selIndentResponse.setLabel("Response indentation");
         selIndentResponse.setTooltipText("Optional response indentation. If set to -1/'off' then the parameter '"
@@ -706,6 +741,13 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         vlError.add(txtErrorStacktrace);
 
         return vlError;
+    }
+
+    // ----------------------------------------------------------------------
+
+    protected String[] textWithBreaksToArray(String content) {
+        return Arrays.stream(Optional.ofNullable(content).orElse("").split("\n")).map(String::trim)
+                .filter(Predicate.not(String::isBlank)).toArray(String[]::new);
     }
 
 }

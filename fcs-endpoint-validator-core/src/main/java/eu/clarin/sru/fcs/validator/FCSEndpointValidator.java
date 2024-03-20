@@ -141,6 +141,8 @@ public class FCSEndpointValidator {
         contextFactory.setIndentResponse(request.getIndentResponse());
         contextFactory.setBaseURI(request.getBaseURI());
         contextFactory.setUserSearchTerm(request.getUserSearchTerm());
+        contextFactory.setUserResourcePids(request.getUserResourcePids());
+        contextFactory.setUserDataViews(request.getUserDataViews());
         // we set client here to reuse it for all tests
         contextFactory.setHttpClient(httpClientFactory.newClient());
         // and store the context factory to be used in the test launcher
