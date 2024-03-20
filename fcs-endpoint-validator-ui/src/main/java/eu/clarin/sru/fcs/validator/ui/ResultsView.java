@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.accordion.AccordionPanel;
@@ -116,6 +117,22 @@ public class ResultsView extends VerticalLayout {
                         if (result.isSaved()) {
                             btnSaveResults.setText("Saved!");
                             btnSaveResults.setEnabled(false);
+
+                            Span msg = new Span();
+                            msg.add(VaadinIcon.DIPLOMA_SCROLL.create());
+                            msg.add(" See your saved endpoint validation result at ");
+                            msg.add(new Anchor(PATH_PREFIX_RESULTS + result.getSaveId(), result.getSaveId()));
+                            msg.add(".");
+                            msg.setWidth("21rem");
+                            msg.addClassNames(LumoUtility.TextAlignment.CENTER, LumoUtility.Border.ALL,
+                                    LumoUtility.BorderColor.SUCCESS_50, LumoUtility.BorderRadius.MEDIUM,
+                                    LumoUtility.BoxShadow.SMALL, LumoUtility.Padding.SMALL);
+                            btnSaveResults.getParent().ifPresent(p -> {
+                                if (p instanceof HasComponents) {
+                                    btnSaveResults.setVisible(false);
+                                    ((HasComponents) p).add(msg);
+                                }
+                            });
                         } else {
                             btnSaveResults.setEnabled(true);
                         }
@@ -233,13 +250,13 @@ public class ResultsView extends VerticalLayout {
             flSaveInfo.getStyle().set("--vaadin-form-item-label-width", "5em");
 
             TextField txtTitle = new TextField();
-            txtTitle.setValue(result.getTitle());
+            txtTitle.setValue(Optional.ofNullable(result.getTitle()).orElse(""));
             txtTitle.setReadOnly(true);
             txtTitle.setWidth("100%");
             flSaveInfo.addFormItem(txtTitle, "Title");
 
             TextArea txtDescription = new TextArea();
-            txtDescription.setValue(result.getDescription());
+            txtDescription.setValue(Optional.ofNullable(result.getDescription()).orElse(""));
             txtDescription.setReadOnly(true);
             txtDescription.setWidth("100%");
             txtDescription.setMaxHeight("4rem");
@@ -438,9 +455,11 @@ public class ResultsView extends VerticalLayout {
 
                 // highlight non-debug/-info messages
                 if (log.getLevel() == Level.WARN) {
-                    txtLogMsg.addClassName(LumoUtility.TextColor.WARNING);
+                    txtLogMsg.addClassNames(LumoUtility.TextColor.WARNING_CONTRAST, LumoUtility.Background.WARNING_10,
+                            LumoUtility.Width.FULL);
                 } else if (log.getLevel() == Level.ERROR) {
-                    txtLogMsg.addClassName(LumoUtility.TextColor.ERROR);
+                    txtLogMsg.addClassNames(LumoUtility.TextColor.ERROR_CONTRAST, LumoUtility.Background.ERROR_50,
+                            LumoUtility.Width.FULL);
                 }
                 resultDetailLogs.add(txtLogMsg);
             }

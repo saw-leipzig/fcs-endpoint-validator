@@ -592,11 +592,10 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         flAdditionInputs.add(chkProbeRequest);
 
         selIndentResponse = new Select<>();
-        selIndentResponse.setLabel("Optional response indentation");
-        selIndentResponse.setTooltipText(
-                "Optional response indentation. If set to -1/'off' then the parameter '"
-                        + FCSTestConstants.X_INDENT_RESPONSE + "' is not sent."
-                        + " This parameter will be set for all test requests!");
+        selIndentResponse.setLabel("Response indentation");
+        selIndentResponse.setTooltipText("Optional response indentation. If set to -1/'off' then the parameter '"
+                + FCSTestConstants.X_INDENT_RESPONSE + "' is not sent."
+                + " This parameter will otherwise be set for all test requests!");
         selIndentResponse.setItemLabelGenerator(new ItemLabelGenerator<>() {
             @Override
             public String apply(Integer indent) {
