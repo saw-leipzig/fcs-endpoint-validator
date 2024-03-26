@@ -9,6 +9,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -20,9 +24,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import eu.clarin.sru.client.SRUClientException;
+import eu.clarin.sru.client.SRUExplainRequest;
+import eu.clarin.sru.client.SRUExplainResponse;
+import eu.clarin.sru.client.SRUExtraResponseData;
+import eu.clarin.sru.client.fcs.ClarinFCSConstants;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidator;
+import eu.clarin.sru.fcs.validator.FCSTestContext;
+import eu.clarin.sru.fcs.validator.FCSTestContextFactory;
+import eu.clarin.sru.fcs.validator.FCSTestHttpClientFactory;
+import eu.clarin.sru.fcs.validator.FCSTestProfile;
 
 @Service
 public class FCSEndpointValidatorService {
@@ -98,6 +112,88 @@ public class FCSEndpointValidatorService {
         });
 
         return completableFuture;
+    }
+
+    // ----------------------------------------------------------------------
+
+    protected ClarinFCSEndpointDescription fetchEndpointDescription(FCSEndpointValidationRequest request) {
+        FCSTestHttpClientFactory httpClientFactory = FCSTestHttpClientFactory.getInstance();
+        httpClientFactory.setConnectTimeout(request.getConnectTimeout());
+        httpClientFactory.setSocketTimeout(request.getSocketTimeout());
+
+        FCSTestProfile profile = request.getFCSTestProfile();
+        if (profile == null) {
+            try {
+                profile = FCSEndpointValidator.detectFCSEndpointVersion(request.getBaseURI());
+            } catch (SRUClientException e) {
+                logger.error("Error trying to detect FCS endpoint version", e);
+                return null;
+            }
+        }
+
+        FCSTestContextFactory contextFactory = FCSTestContextFactory.newInstance();
+        contextFactory.setHttpClient(httpClientFactory.newClient());
+        contextFactory.setFCSTestProfile(profile);
+        contextFactory.setStrictMode(request.isStrictMode());
+        contextFactory.setIndentResponse(request.getIndentResponse());
+        contextFactory.setBaseURI(request.getBaseURI());
+
+        FCSTestContext context = contextFactory.newFCSTestContext();
+
+        SRUExplainRequest req = context.createExplainRequest();
+        req.setExtraRequestData(ClarinFCSConstants.X_FCS_ENDPOINT_DESCRIPTION, "true");
+        req.setParseRecordDataEnabled(true);
+
+        SRUExplainResponse res;
+        try {
+            res = context.getClient().explain(req);
+        } catch (SRUClientException e) {
+            logger.error("Error trying to execute SRU Explain request", e);
+            return null;
+        }
+
+        if (!res.hasExtraResponseData()) {
+            return null;
+        }
+        for (SRUExtraResponseData data : res.getExtraResponseData()) {
+            if (data instanceof ClarinFCSEndpointDescription) {
+                return (ClarinFCSEndpointDescription) data;
+            }
+        }
+        return null;
+    }
+
+    public String[] getResourcePIDsFromEndpoint(FCSEndpointValidationRequest request) {
+        ClarinFCSEndpointDescription ed = fetchEndpointDescription(request);
+        if (ed == null) {
+            return null;
+        }
+
+        return recurseResources(ed.getResources()).toArray(String[]::new);
+    }
+
+    private List<String> recurseResources(List<ResourceInfo> resources) {
+        if (resources == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> pids = new ArrayList<>();
+
+        resources.stream().map(r -> r.getPid()).forEach(pids::add);
+        resources.stream().map(r -> r.getSubResources()).filter(Objects::nonNull).map(this::recurseResources)
+                .forEach(pids::addAll);
+
+        return pids;
+    }
+
+    public String[] getDataViewIDsFromEndpoint(FCSEndpointValidationRequest request) {
+        ClarinFCSEndpointDescription ed = fetchEndpointDescription(request);
+        if (ed == null) {
+            return null;
+        }
+
+        return ed.getSupportedDataViews().stream().map(ClarinFCSEndpointDescription.DataView::getIdentifier)
+                .toArray(String[]::new);
     }
 
     // ----------------------------------------------------------------------

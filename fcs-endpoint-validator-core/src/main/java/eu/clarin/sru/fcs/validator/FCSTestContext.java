@@ -100,8 +100,16 @@ public class FCSTestContext {
         return userResourcePids;
     }
 
+    public boolean hasUserResourcePids() {
+        return userResourcePids != null && userResourcePids.length > 0;
+    }
+
     public String[] getUserDataViews() {
         return userDataViews;
+    }
+
+    public boolean hasUserDataViews() {
+        return userDataViews != null && userDataViews.length > 0;
     }
 
     // ----------------------------------------------------------------------

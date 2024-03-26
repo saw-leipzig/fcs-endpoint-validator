@@ -99,6 +99,8 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     public TextField txtSearchTerm;
     public TextArea txtResourcePids;
     public TextArea txtDataViewIds;
+    public Button btnLoadTxtResourcePids;
+    public Button btnLoadTxtDataViewIds;
     public Button btnStart;
     public Button btnConfig;
 
@@ -190,19 +192,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
             UI.getCurrent().getPage().getHistory().replaceState(null, thisViewUrl);
 
             // build FCS Validation Request
-            final FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
-            // required inputs
-            request.setBaseURI(txtEndpointURL.getValue().strip());
-            request.setUserSearchTerm(txtSearchTerm.getValue());
-            // and additional configurations
-            request.setFCSTestProfile(selTestProfile.getValue());
-            request.setStrictMode(chkStrictMode.getValue());
-            request.setPerformProbeRequest(chkProbeRequest.getValue());
-            request.setUserResourcePids(textWithBreaksToArray(txtResourcePids.getValue()));
-            request.setUserDataViews(textWithBreaksToArray(txtDataViewIds.getValue()));
-            request.setIndentResponse(selIndentResponse.getValue());
-            request.setConnectTimeout(selConnectTimeout.getValue());
-            request.setSocketTimeout(selSocketTimeout.getValue());
+            final FCSEndpointValidationRequest request = buildFCSEndpointValidationRequestFromInputs();
 
             final Instant requestDatetime = Instant.now();
 
@@ -250,6 +240,66 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         btnConfig.addClickListener(event -> {
             dlgAdditionalConfigurations.open();
         });
+
+        // --------------------------------------------------------
+        // load data from Endpoint Description
+
+        txtEndpointURL.addValueChangeListener(event -> {
+            final boolean shouldEnableBtns = !txtEndpointURL.isInvalid();
+            btnLoadTxtResourcePids.setEnabled(shouldEnableBtns);
+            btnLoadTxtDataViewIds.setEnabled(shouldEnableBtns);
+        });
+
+        txtResourcePids.addValueChangeListener(e -> btnLoadTxtResourcePids.setVisible(e.getValue().isBlank()));
+        txtDataViewIds.addValueChangeListener(e -> btnLoadTxtDataViewIds.setVisible(e.getValue().isBlank()));
+
+        btnLoadTxtResourcePids.addClickListener(event -> {
+            if (txtEndpointURL.getValue().isBlank()) {
+                return;
+            }
+            if (!event.getSource().isEnabled() || !event.getSource().isVisible()) {
+                return;
+            }
+
+            final FCSEndpointValidationRequest request = buildFCSEndpointValidationRequestFromInputs();
+            final String[] pids = fcsEndpointValidatorService.getResourcePIDsFromEndpoint(request);
+            txtResourcePids.setValue(
+                    Arrays.stream(Optional.ofNullable(pids).orElse(new String[] {})).collect(Collectors.joining("\n")));
+        });
+
+        btnLoadTxtDataViewIds.addClickListener(event -> {
+            if (txtEndpointURL.getValue().isBlank()) {
+                return;
+            }
+            if (!event.getSource().isEnabled() || !event.getSource().isVisible()) {
+                return;
+            }
+
+            final FCSEndpointValidationRequest request = buildFCSEndpointValidationRequestFromInputs();
+            final String[] ids = fcsEndpointValidatorService.getDataViewIDsFromEndpoint(request);
+            txtDataViewIds.setValue(
+                    Arrays.stream(Optional.ofNullable(ids).orElse(new String[] {})).collect(Collectors.joining("\n")));
+        });
+
+    }
+
+    protected FCSEndpointValidationRequest buildFCSEndpointValidationRequestFromInputs() {
+        // build FCS Validation Request
+        final FCSEndpointValidationRequest request = new FCSEndpointValidationRequest();
+        // required inputs
+        request.setBaseURI(txtEndpointURL.getValue().strip());
+        request.setUserSearchTerm(txtSearchTerm.getValue());
+        // and additional configurations
+        request.setFCSTestProfile(selTestProfile.getValue());
+        request.setStrictMode(chkStrictMode.getValue());
+        request.setPerformProbeRequest(chkProbeRequest.getValue());
+        request.setUserResourcePids(textWithBreaksToArray(txtResourcePids.getValue()));
+        request.setUserDataViews(textWithBreaksToArray(txtDataViewIds.getValue()));
+        request.setIndentResponse(selIndentResponse.getValue());
+        request.setConnectTimeout(selConnectTimeout.getValue());
+        request.setSocketTimeout(selSocketTimeout.getValue());
+
+        return request;
     }
 
     // ----------------------------------------------------------------------
@@ -607,6 +657,13 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         chkProbeRequest.setValue(true);
         flAdditionInputs.add(chkProbeRequest);
 
+        btnLoadTxtResourcePids = new Button(VaadinIcon.FILE_SEARCH.create());
+        btnLoadTxtResourcePids.addThemeVariants(ButtonVariant.LUMO_ICON);
+        btnLoadTxtResourcePids.addClassName(LumoUtility.AlignSelf.AUTO);
+        btnLoadTxtResourcePids.setAriaLabel("Try to load Resource PIDs from FCS Endpoint Description");
+        btnLoadTxtResourcePids.setTooltipText("Try to load Resource PIDs from FCS Endpoint Description");
+        btnLoadTxtResourcePids.setEnabled(!txtEndpointURL.getValue().isBlank() && !txtEndpointURL.isInvalid());
+
         txtResourcePids = new TextArea();
         txtResourcePids.setLabel("Resource PIDs");
         txtResourcePids.setTooltipText("Optional list of Resource PIDs for searchRetrieve requests."
@@ -615,7 +672,15 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         txtResourcePids.setValueChangeMode(ValueChangeMode.EAGER);
         txtResourcePids.addValueChangeListener(
                 e -> e.getSource().setHelperText(textWithBreaksToArray(e.getValue()).length + " Resource PIDs"));
+        txtResourcePids.setSuffixComponent(btnLoadTxtResourcePids);
         flAdditionInputs.add(txtResourcePids);
+
+        btnLoadTxtDataViewIds = new Button(VaadinIcon.FILE_SEARCH.create());
+        btnLoadTxtDataViewIds.addThemeVariants(ButtonVariant.LUMO_ICON);
+        btnLoadTxtDataViewIds.addClassName(LumoUtility.AlignSelf.AUTO);
+        btnLoadTxtDataViewIds.setAriaLabel("Try to load Data View IDs from FCS Endpoint Description");
+        btnLoadTxtDataViewIds.setTooltipText("Try to load Data View IDs from FCS Endpoint Description");
+        btnLoadTxtDataViewIds.setEnabled(!txtEndpointURL.getValue().isBlank() && !txtEndpointURL.isInvalid());
 
         txtDataViewIds = new TextArea();
         txtDataViewIds.setLabel("DataView IDs");
@@ -625,6 +690,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         txtDataViewIds.setValueChangeMode(ValueChangeMode.EAGER);
         txtDataViewIds.addValueChangeListener(
                 e -> e.getSource().setHelperText(textWithBreaksToArray(e.getValue()).length + " DataView IDs"));
+        txtDataViewIds.setSuffixComponent(btnLoadTxtDataViewIds);
         flAdditionInputs.add(txtDataViewIds);
 
         selIndentResponse = new Select<>();

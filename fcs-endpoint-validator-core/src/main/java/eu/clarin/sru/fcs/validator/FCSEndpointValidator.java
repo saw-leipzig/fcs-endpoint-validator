@@ -256,7 +256,7 @@ public class FCSEndpointValidator {
         return response;
     }
 
-    private static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
+    public static FCSTestProfile detectFCSEndpointVersion(String endpointURI) throws SRUClientException {
         final ClarinFCSEndpointVersionAutodetector versionAutodetector = new ClarinFCSEndpointVersionAutodetector();
 
         // TODO: update to first check FCS 2.0, then FCS 1.0 / legacy
@@ -319,7 +319,7 @@ public class FCSEndpointValidator {
         return profile;
     }
 
-    private static void performProbeRequest(final String baseURI)
+    protected static void performProbeRequest(final String baseURI)
             throws IOException {
         try {
             logger.debug("performing initial probe request to {}", baseURI);
