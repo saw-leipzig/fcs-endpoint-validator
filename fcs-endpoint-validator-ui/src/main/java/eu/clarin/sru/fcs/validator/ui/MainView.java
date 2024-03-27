@@ -356,6 +356,11 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         // populate input fields
         queryParameters.getSingleParameter("url").ifPresent(url -> txtEndpointURL.setValue(url));
         queryParameters.getSingleParameter("searchterm").ifPresent(term -> txtSearchTerm.setValue(term));
+        // TODO: or multiple (with "," separator ob by
+        // `queryParameters.getParameters("resourcePid")`?)
+        queryParameters.getSingleParameter("resourcePid").ifPresent(pid -> txtResourcePids.setValue(pid));
+        // TODO: support FCSSRUAggregators x-aggregation-context JSON parameter?
+
         // start validation if requested
         queryParameters.getSingleParameter("action").ifPresent(action -> {
             if ("validate".equals(action)) {
