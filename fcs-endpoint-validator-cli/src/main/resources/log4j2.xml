@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Properties>
+        <Property name="logdir">$${sys:catalina.base}/logs</Property>
+        <Property name="layout">%d %p %C{1.} [%t] %m%n</Property>
+    </Properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout
+                pattern="%style{%d{ISO8601}}{grey} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: %msg%n%throwable" />
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- IMPORTANT: DO NOT CHANGE (but can be removed) -->
+        <!-- NOTE: due to log capturing, output for more verbose levels might still be written to console (or the main appender) -->
+        
+        <!-- set log level to ALL to get logs from SRU/FCS libraries -->
+        <!-- NOTE: if any loggers 'eu.clarin.sru' are defined in another way, always add additivity="true"!!! -->
+        <!-- NOTE: the log level does not matter, for log capturing it will be increase to ALL to get everything -->
+        <!-- <Logger name="eu.clarin.sru" level="info" additivity="true"></Logger> -->
+        <!-- <Logger name="eu.clarin.sru.client" level="info" additivity="true"></Logger> -->
+
+        <!-- just added those here, not really required if there is not other log config changes -->
+        <Logger name="eu.clarin.sru" level="all" additivity="true"></Logger>
+        <Logger name="eu.clarin.sru.client" level="all" additivity="true"></Logger>
+
+        <!-- this is required, set additivity for test case loggers so output is not swallowed! -->
+        <Logger name="eu.clarin.sru.fcs.validator.tests" level="all" additivity="true"></Logger>
+        <!-- /IMPORTANT -->
+
+        <!-- YOU CAN CHANGE BELOW HERE ...-->
+        <!-- set log level for validator (additivity to true for log capturing and console output -->
+        <Logger name="eu.clarin.sru.fcs.validator" level="info" additivity="true">
+            <AppenderRef ref="Console" />
+        </Logger>
+        <!-- set log level for validator cli -->
+        <Logger name="eu.clarin.sru.fcs.validator.cli" level="info" additivity="false">
+            <AppenderRef ref="Console" />
+        </Logger>
+        <!-- <Logger name="org.junit" level="debug" additivity="true"></Logger> -->
+        <!-- LOG everything at INFO level -->
+        <Root level="info">
+            <!-- <AppenderRef ref="Console" /> -->
+        </Root>
+    </Loggers>
+</Configuration>

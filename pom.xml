@@ -28,6 +28,7 @@
   <modules>
     <module>fcs-endpoint-validator-core</module>
     <module>fcs-endpoint-validator-ui</module>
+    <module>fcs-endpoint-validator-cli</module>
   </modules>
 
   <build>
@@ -56,6 +57,14 @@
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>3.3.0</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.5.2</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.7.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
