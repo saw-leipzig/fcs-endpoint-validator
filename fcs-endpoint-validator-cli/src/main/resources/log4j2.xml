@@ -31,9 +31,11 @@
 
         <!-- YOU CAN CHANGE BELOW HERE ...-->
         <!-- set log level for validator (additivity to true for log capturing and console output -->
+        <!--
         <Logger name="eu.clarin.sru.fcs.validator" level="info" additivity="true">
             <AppenderRef ref="Console" />
         </Logger>
+        -->
         <!-- set log level for validator cli -->
         <Logger name="eu.clarin.sru.fcs.validator.cli" level="info" additivity="false">
             <AppenderRef ref="Console" />
