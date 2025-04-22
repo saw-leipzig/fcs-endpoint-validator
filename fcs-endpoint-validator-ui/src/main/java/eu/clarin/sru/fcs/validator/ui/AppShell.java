@@ -19,6 +19,8 @@ import com.vaadin.flow.theme.Theme;
 @Theme(value = "fcs-endpoint-validator") // variant=Lumo.DARK
 public class AppShell implements AppShellConfigurator {
 
+    private static final long serialVersionUID = 6839932476927563900L;
+
     static {
         // @formatter:off
         // this seems to throw errors but still change the log level as wanted?

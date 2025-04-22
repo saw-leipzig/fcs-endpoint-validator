@@ -308,9 +308,9 @@ public class FCSEndpointValidator {
             SRUExplainResponse response = client.explain(request);
             ClarinFCSEndpointDescription ed = response.getFirstExtraResponseData(ClarinFCSEndpointDescription.class);
             if (ed != null) {
-                if (ed.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH)) {
+                if (ed.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_LEX_SEARCH)) {
                     logger.info("Found <{}> capability. Upgrading test profile.",
-                            FCSTestConstants.CAPABILITY_LEX_SEARCH);
+                            ClarinFCSConstants.CAPABILITY_LEX_SEARCH);
                     profile = FCSTestProfile.LEX_FCS;
                 }
             }

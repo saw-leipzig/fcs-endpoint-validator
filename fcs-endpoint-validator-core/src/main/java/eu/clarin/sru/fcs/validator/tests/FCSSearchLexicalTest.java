@@ -31,7 +31,6 @@ import eu.clarin.sru.client.fcs.DataView;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.Resource;
 import eu.clarin.sru.client.fcs.Resource.ResourceFragment;
-import eu.clarin.sru.fcs.validator.FCSTestConstants;
 import eu.clarin.sru.fcs.validator.FCSTestContext;
 import eu.clarin.sru.fcs.validator.FCSTestProfile;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.Category;
@@ -81,7 +80,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, escapeCQL(getRandomSearchTerm()));
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX, escapeCQL(getRandomSearchTerm()));
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
         assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
@@ -96,7 +95,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, escapeCQL(context.getUserSearchTerm()));
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX, escapeCQL(context.getUserSearchTerm()));
         req.setRecordSchema(FCS_RECORD_SCHEMA);
         req.setMaximumRecords(5);
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
@@ -177,7 +176,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("lemma = \"%s\"", getRandomSearchTerm()));
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX, String.format("lemma = \"%s\"", getRandomSearchTerm()));
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
         assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
@@ -191,7 +190,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("lemma = %s", getRandomSearchTerm()));
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX, String.format("lemma = %s", getRandomSearchTerm()));
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
         assertEqualsElseWarn(0, res.getDiagnosticsCount(), "One or more unexpected diagnostic reported by endpoint.");
     }
@@ -208,7 +207,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX,
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX,
                 String.format("\"%s\" OR \"%s\"", getRandomSearchTerm(), getRandomSearchTerm()));
         req.setMaximumRecords(5);
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
@@ -261,7 +260,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX,
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX,
                 String.format("\"%s\" AND \"%s\"", getRandomSearchTerm(), getRandomSearchTerm()));
         req.setMaximumRecords(5);
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
@@ -301,9 +300,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     // TODO: lemma = /xyzMODIFIER "word"
 
     // ----------------------------------------------------------------------
-    // LexFCS: check support for other indexes/fields like pos/def/senseRef
-    // TODO: xr$... fields ? (xr$synonymy, xr$hyponymy, xr$hypernymy, xr$meronymy,
-    // xr$antonymy)
+    // LexFCS: check support for other indexes/fields like pos/definition/senseRef
 
     @Test
     @Order(5200)
@@ -314,7 +311,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("pos = \"%s\"", getRandomSearchTerm()));
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX, String.format("pos = \"%s\"", getRandomSearchTerm()));
         req.setMaximumRecords(5);
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
 
@@ -340,13 +337,13 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
     @Test
     @Order(5210)
     @LexFCS
-    @DisplayName("Search for random string with LexCQL 'def = \"<random string>\"'")
+    @DisplayName("Search for random string with LexCQL 'definition = \"<random string>\"'")
     @Expected("No errors but maybe a diagnostic if not supported (and zero or more records)")
     void doLexFCSSearchWithDefField(FCSTestContext context) throws SRUClientException {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("def = \"%s\"", getRandomSearchTerm()));
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX, String.format("definition = \"%s\"", getRandomSearchTerm()));
         req.setMaximumRecords(5);
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
 
@@ -378,7 +375,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeLexSearch(context);
 
         SRUSearchRetrieveRequest req = context.createSearchRetrieveRequest();
-        req.setQuery(FCSTestConstants.QUERY_TYPE_LEX, String.format("senseRef = \"%s\"", getRandomSearchTerm()));
+        req.setQuery(ClarinFCSConstants.QUERY_TYPE_LEX, String.format("senseRef = \"%s\"", getRandomSearchTerm()));
         req.setMaximumRecords(5);
         SRUSearchRetrieveResponse res = context.getClient().searchRetrieve(req);
 
@@ -413,7 +410,7 @@ public class FCSSearchLexicalTest extends AbstractFCSTest {
         assumeTrue(endpointDescription != null, "Endpoint did not supply a valid Endpoint Description?");
 
         // do we support ADV search?
-        boolean supportsLex = endpointDescription.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH);
+        boolean supportsLex = endpointDescription.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_LEX_SEARCH);
         assumeTrue(supportsLex, "Endpoint claims no support for Lex Search");
     }
 

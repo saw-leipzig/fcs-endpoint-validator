@@ -66,6 +66,8 @@ import eu.clarin.sru.fcs.validator.FCSTestResult;
 import eu.clarin.sru.fcs.validator.HttpRequestResponseInfo;
 
 public class ResultsView extends VerticalLayout {
+    private static final long serialVersionUID = 7236394894246319339L;
+
     private static final Logger logger = LoggerFactory.getLogger(ResultsView.class);
 
     // DateTimeFormatter.ISO_LOCAL_DATE_TIME;

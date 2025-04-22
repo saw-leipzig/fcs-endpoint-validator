@@ -44,6 +44,7 @@ import eu.clarin.sru.client.fcs.DataViewGenericDOM;
 import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordData;
+import eu.clarin.sru.client.fcs.LegacyDataViewKWIC;
 import eu.clarin.sru.client.fcs.Resource;
 import eu.clarin.sru.client.fcs.Resource.ResourceFragment;
 import eu.clarin.sru.fcs.validator.FCSTestContext;
@@ -59,7 +60,8 @@ public class FCSSearchTest extends AbstractFCSTest {
 
     private static final String FCS_RECORD_SCHEMA = ClarinFCSRecordData.RECORD_SCHEMA;
     private static final String FCS10_RECORD_SCHEMA = "http://clarin.eu/fcs/1.0";
-    private static final String MIME_TYPE_KWIC = "application/x-clarin-fcs-kwic+xml";
+    @SuppressWarnings("deprecation")
+    private static final String MIME_TYPE_KWIC = LegacyDataViewKWIC.TYPE;
 
     // TODO: supply via context, maybe make repeatable and change?
     private final String randomSearchTerm = RandomStringUtils.randomAlphanumeric(16);
@@ -496,6 +498,7 @@ public class FCSSearchTest extends AbstractFCSTest {
     // Aggregator Minimum Compliance
     // TODO: do we still want to test FCS 1.0/Legacy?
 
+    @SuppressWarnings("deprecation")
     @Test
     @Order(4900)
     @ClarinFCSLegacy

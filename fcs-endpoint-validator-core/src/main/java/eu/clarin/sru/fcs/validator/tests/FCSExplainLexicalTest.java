@@ -17,7 +17,6 @@ import eu.clarin.sru.client.SRUExplainRequest;
 import eu.clarin.sru.client.SRUExplainResponse;
 import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
-import eu.clarin.sru.fcs.validator.FCSTestConstants;
 import eu.clarin.sru.fcs.validator.FCSTestContext;
 import eu.clarin.sru.fcs.validator.FCSTestProfile;
 import eu.clarin.sru.fcs.validator.tests.AbstractFCSTest.Category;
@@ -54,11 +53,11 @@ public class FCSExplainLexicalTest extends AbstractFCSTest {
         assertEquals(2, desc.getVersion(),
                 "FCS 2.0 endpoint must provide an endpoint description with version set to \"2\"");
 
-        boolean supportsLex = desc.getCapabilities().contains(FCSTestConstants.CAPABILITY_LEX_SEARCH);
+        boolean supportsLex = desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_LEX_SEARCH);
 
         // assert since it is required for LexFCS searches!
         assertTrue(supportsLex, "Endpoint must declare support for LexFCS using Capability = "
-                + FCSTestConstants.CAPABILITY_LEX_SEARCH + "!");
+                + ClarinFCSConstants.CAPABILITY_LEX_SEARCH + "!");
 
         assertNotEquals(0, desc.getResources().size(),
                 "No resources declared. Endpoint must declare at least one Resource");

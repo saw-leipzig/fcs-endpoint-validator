@@ -1,11 +1,8 @@
 package eu.clarin.sru.fcs.validator.ui;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import io.github.bucket4j.Bandwidth;
@@ -14,8 +11,6 @@ import io.github.bucket4j.EstimationProbe;
 
 @Service
 public class FCSEndpointValidationRequestIPThrottlerService {
-    private static final Logger logger = LoggerFactory.getLogger(FCSEndpointValidationRequestIPThrottlerService.class);
-
     protected final FCSEndpointValidatorProperties properties;
 
     protected final Map<String, Bucket> cache = new ConcurrentHashMap<>();

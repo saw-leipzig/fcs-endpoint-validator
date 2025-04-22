@@ -3,9 +3,6 @@ package eu.clarin.sru.fcs.validator.ui;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Anchor;
@@ -23,7 +20,7 @@ import eu.clarin.sru.fcs.validator.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationResponse;
 
 public class ProgressView extends VerticalLayout implements FCSEndpointValidatorProgressListener {
-    private static final Logger logger = LoggerFactory.getLogger(ProgressView.class);
+    private static final long serialVersionUID = 957175671994824099L;
 
     final UI ui;
 

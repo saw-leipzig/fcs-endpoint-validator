@@ -70,13 +70,11 @@ public enum FCSTestProfile {
     // ----------------------------------------------------------------------
 
     static {
-        ENUM_LOOKUP = Collections.unmodifiableMap(new HashMap<>() {
-            {
-                for (FCSTestProfile profile : FCSTestProfile.values()) {
-                    put(profile.uniqueName, profile);
-                }
-            }
-        });
+        final HashMap<String, FCSTestProfile> lookup = new HashMap<>(FCSTestProfile.values().length);
+        for (FCSTestProfile profile : FCSTestProfile.values()) {
+            lookup.put(profile.uniqueName, profile);
+        }
+        ENUM_LOOKUP = Collections.unmodifiableMap(lookup);
     }
 
     public static FCSTestProfile get(String uniqueName) {

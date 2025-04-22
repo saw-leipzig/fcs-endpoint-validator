@@ -69,11 +69,12 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vaadin.flow.theme.lumo.LumoUtility.Padding;
 
+import eu.clarin.sru.client.SRUClientConstants;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidationRequest;
 import eu.clarin.sru.fcs.validator.FCSEndpointValidatorProgressListener;
-import eu.clarin.sru.fcs.validator.FCSTestConstants;
 import eu.clarin.sru.fcs.validator.FCSTestProfile;
 
+@SuppressWarnings("serial")
 @PageTitle("FCS SRU Endpoint Validator")
 @Route
 @PreserveOnRefresh
@@ -701,7 +702,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         selIndentResponse = new Select<>();
         selIndentResponse.setLabel("Response indentation");
         selIndentResponse.setTooltipText("Optional response indentation. If set to -1/'off' then the parameter '"
-                + FCSTestConstants.X_INDENT_RESPONSE + "' is not sent."
+                + SRUClientConstants.X_INDENT_RESPONSE + "' is not sent."
                 + " This parameter will otherwise be set for all test requests!");
         selIndentResponse.setItemLabelGenerator(new ItemLabelGenerator<>() {
             @Override

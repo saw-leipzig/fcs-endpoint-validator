@@ -13,7 +13,6 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.junit.platform.engine.TestExecutionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUExplainRequest;
