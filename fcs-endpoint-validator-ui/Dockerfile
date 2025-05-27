@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-FROM maven:3.9.6-eclipse-temurin-17-focal AS builder
+FROM maven:3.9.9-eclipse-temurin-21 AS builder
 
 WORKDIR /work
 
@@ -32,7 +32,7 @@ COPY fcs-endpoint-validator-ui /work/fcs-endpoint-validator-ui
 RUN mvn -B -ntp -Pproduction -pl fcs-endpoint-validator-ui -am clean package
 
 # ---------------------------------------------------------------------------
-FROM eclipse-temurin:17-jre AS endpoint-validator
+FROM eclipse-temurin:21-jre AS endpoint-validator
 
 COPY --from=builder /work/fcs-endpoint-validator-ui/target/*.jar app.jar
 EXPOSE 8080
