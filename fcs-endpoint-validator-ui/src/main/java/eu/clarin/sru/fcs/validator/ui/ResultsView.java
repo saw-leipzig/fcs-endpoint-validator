@@ -12,8 +12,10 @@ import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
@@ -428,10 +430,26 @@ public class ResultsView extends VerticalLayout {
         }
 
         if (!testResult.getLogs().isEmpty()) {
-            H4 txtLogHeader = new H4("Debug messages:");
+            H4 txtLogHeader = new H4("Log messages:");
             txtLogHeader.addClassName(LumoUtility.Margin.Top.MEDIUM);
             txtLogHeader.addClassName(LumoUtility.FontSize.SMALL);
             resultDetail.add(txtLogHeader);
+
+            Div resultLogsCounter = new Div();
+            resultLogsCounter.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.ROW,
+                    LumoUtility.Gap.SMALL, LumoUtility.Margin.Vertical.SMALL);
+
+            testResult.getLogs().stream()
+                    .collect(Collectors.groupingBy(LogEvent::getLevel, Collectors.counting()))
+                    .entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> {
+                        Span txtLogCount = new Span(String.format("%s: %s", entry.getKey(), entry.getValue()));
+                        txtLogCount.getElement().getThemeList().add("badge contrast small");
+                        resultLogsCounter.add(txtLogCount);
+                    });
+
+            resultDetail.add(resultLogsCounter);
 
             Div resultDetailLogs = new Div();
             resultDetailLogs.addClassNames(LumoUtility.Display.FLEX, LumoUtility.FlexDirection.COLUMN,
@@ -446,7 +464,9 @@ public class ResultsView extends VerticalLayout {
                         dateFmt.format(Instant.ofEpochMilli(log.getTimeMillis()).atZone(ZoneId.systemDefault()))));
 
                 Span txtLogMsgLogger = new Span(String.format("[%s] ", formatClassName(log.getLoggerName())));
-                txtLogMsgLogger.setTitle(log.getLoggerName());
+                txtLogMsgLogger.setTitle(String.format("%s \nat %s.%s(%s:%s)", log.getLoggerName(),
+                        log.getSource().getClassName(), log.getSource().getMethodName(), log.getSource().getFileName(),
+                        log.getSource().getLineNumber()));
 
                 Span txtLogMsgText = new Span(log.getMessage().getFormattedMessage());
                 txtLogMsgText.addClassName(LumoUtility.FontWeight.NORMAL);
