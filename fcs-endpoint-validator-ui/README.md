@@ -25,3 +25,10 @@ cd ../
 
 docker build -f fcs-endpoint-validator-ui/Dockerfile .
 ```
+
+## Matomo Tracking
+
+Note that default Matomo Tracking code is included. You should change or remove it when deploying the FCS Endpoint Validator yourself:
+
+- [`frontend/index.html`](frontend/index.html): default JavaScript matomo tracking code at the bottom of the `<body>` element
+- [`src/main/resources/application.properties`](src/main/resources/application.properties): `fcsvalidator.enableMatomoTrackingCalls` (default `false` when not specified) that performs some custom Matomo Event tracking calls

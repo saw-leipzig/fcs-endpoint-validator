@@ -27,10 +27,12 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.pattern.NameAbbreviator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
@@ -71,6 +73,9 @@ public class ResultsView extends VerticalLayout {
     private static final long serialVersionUID = 7236394894246319339L;
 
     private static final Logger logger = LoggerFactory.getLogger(ResultsView.class);
+
+    @Autowired
+    private FCSEndpointValidatorProperties properties;
 
     // DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -637,6 +642,14 @@ public class ResultsView extends VerticalLayout {
             if (txtTitle.getValue().isBlank()) {
                 dlgSaveResultInputs.close();
                 return;
+            }
+
+            // tracking
+            if (this.properties.isEnableMatomoTrackingCalls()) {
+                // NOTE: only use endpoint url
+                UI.getCurrent().getPage().executeJs(
+                        "_paq.push(['trackEvent', 'Evaluation', 'Save Validation Results Button Click', $0])",
+                        result.getRequest().getBaseURI());
             }
 
             if (!txtTitle.getValue().isBlank()) {

@@ -93,6 +93,9 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
     @Autowired
     private FCSEndpointValidationRequestIPThrottlerService fcsEndpointValdidationRequestThrottler;
 
+    @Autowired
+    private FCSEndpointValidatorProperties properties;
+
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public VerticalLayout mainContent;
@@ -198,6 +201,13 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
             final Instant requestDatetime = Instant.now();
 
             logger.info("New endpoint validation request {} from {}", request, ipAddress);
+
+            // tracking
+            if (this.properties.isEnableMatomoTrackingCalls()) {
+                UI.getCurrent().getPage().executeJs(
+                        "_paq.push(['trackEvent', 'Evaluation', 'Evaluate Button Click', $0])",
+                        txtEndpointURL.getValue().strip());
+            }
 
             // NOTE: this is a bit weird/side-effecty
             // we need to create a view but the listener is connected to it

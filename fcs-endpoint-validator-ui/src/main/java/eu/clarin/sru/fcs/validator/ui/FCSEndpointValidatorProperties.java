@@ -25,6 +25,8 @@ public class FCSEndpointValidatorProperties {
     @DurationUnit(ChronoUnit.SECONDS)
     private Duration minDelayBetweenValidationRequests = Duration.ofSeconds(5);
 
+    private boolean enableMatomoTrackingCalls = false;
+
     // ----------------------------------------------------------------------
 
     public File getValidationResultsFolder() {
@@ -57,6 +59,14 @@ public class FCSEndpointValidatorProperties {
 
     public void setMinDelayBetweenValidationRequests(Duration minDelayBetweenValidationRequests) {
         this.minDelayBetweenValidationRequests = minDelayBetweenValidationRequests;
+    }
+
+    public boolean isEnableMatomoTrackingCalls() {
+        return enableMatomoTrackingCalls;
+    }
+
+    public void setEnableMatomoTrackingCalls(boolean enableMatomoTrackingCalls) {
+        this.enableMatomoTrackingCalls = enableMatomoTrackingCalls;
     }
 
 }
