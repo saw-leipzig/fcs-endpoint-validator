@@ -422,7 +422,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
 
     public void setMainContentResults(FCSEndpointValidationResult result) {
         mainContent.removeAll();
-        mainContent.add(new ResultsView(result, fcsEndpointValidatorService));
+        mainContent.add(new ResultsView(result, fcsEndpointValidatorService, properties));
     }
 
     public void setMainContentError(String title, Throwable t) {

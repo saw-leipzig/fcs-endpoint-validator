@@ -74,8 +74,7 @@ public class ResultsView extends VerticalLayout {
 
     private static final Logger logger = LoggerFactory.getLogger(ResultsView.class);
 
-    @Autowired
-    private FCSEndpointValidatorProperties properties;
+    private final FCSEndpointValidatorProperties properties;
 
     // DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -95,9 +94,11 @@ public class ResultsView extends VerticalLayout {
 
     public Button btnSaveResults = null;
 
-    public ResultsView(FCSEndpointValidationResult result, FCSEndpointValidatorService fcsEndpointValidatorService) {
+    public ResultsView(FCSEndpointValidationResult result, FCSEndpointValidatorService fcsEndpointValidatorService,
+            FCSEndpointValidatorProperties properties) {
         this.result = result;
         this.fcsEndpointValidatorService = fcsEndpointValidatorService;
+        this.properties = properties;
 
         // --------------------------------------------------------
 
