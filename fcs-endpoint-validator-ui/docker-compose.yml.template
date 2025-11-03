@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   fcs-endpoint-validator:
     build:
