@@ -450,7 +450,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
 
         // set image height to 35px, based on H1; var(--lumo-icon-size-l) ?
 
-        Image imgLogoCLARIN = new Image("themes/fcs-endpoint-validator/images/logo-clarin.png",
+        Image imgLogoCLARIN = new Image("themes/fcs-endpoint-validator/images/logo-clarin.svg",
                 "Logo Common Language Resources and Technology Infrastructure");
         imgLogoCLARIN.setHeight("35px");
         imgLogoCLARIN.addClassName(LumoUtility.Margin.Left.AUTO);
@@ -463,7 +463,7 @@ public class MainView extends VerticalLayout implements HasUrlParameter<String> 
         imgLogoTextPlus.setAriaLabel("Logo of Text Plus");
         titleRow.add(imgLogoTextPlus);
 
-        Image imgLogoSAW = new Image("themes/fcs-endpoint-validator/images/logo-saw.png",
+        Image imgLogoSAW = new Image("themes/fcs-endpoint-validator/images/logo-saw.svg",
                 "Logo Saxon Academy of Sciences and Humanities in Leipzig");
         imgLogoSAW.setHeight("35px");
         imgLogoSAW.addClassNames(LumoUtility.Border.LEFT, LumoUtility.Padding.Left.MEDIUM);
