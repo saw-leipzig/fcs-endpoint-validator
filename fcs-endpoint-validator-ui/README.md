@@ -13,6 +13,19 @@ Some useful links:
 - [Tutorials](https://vaadin.com/tutorials?q=tag:Flow)
 - [Component Java integrations and examples](https://vaadin.com/components)
 
+## Build and Run
+
+```bash
+# got back to root of multi-module fcs-endpoint-validator
+cd ../
+
+# build (production)
+mvn -Pproduction clean package
+
+# run
+java -jar fcs-endpoint-validator-ui/target/endpoint-validator-ui-1.0.0-SNAPSHOT.jar
+```
+
 ## Build Dockerimage
 
 ```bash
