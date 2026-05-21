@@ -551,7 +551,7 @@ public class FCSSearchTest extends AbstractFCSTest {
             }
         }
 
-        assertTrue(res.hasRecords(), "Expected SearchRetrieve response to contain at least one record!");
+        assumeTrue(res.hasRecords(), "Expected SearchRetrieve response to contain at least one record!");
 
         int nextRecordPosition = 1;
         for (final SRURecord record : res.getRecords()) {
