@@ -14,7 +14,7 @@
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <failOnMissingWebXml>false</failOnMissingWebXml>
-    <vaadin.version>24.3.5</vaadin.version>
+    <vaadin.version>24.10.4</vaadin.version>
     <slf4j.version>2.0.18</slf4j.version>
   </properties>
 
@@ -22,7 +22,7 @@
     <!-- for SpringBoot -->
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.2</version>
+    <version>3.5.14</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
 
